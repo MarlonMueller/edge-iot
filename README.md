@@ -1,6 +1,13 @@
 # edge-iot
 Edge Computing and the Internet of Things
 
+![Screenshot](https://github.com/MarlonMueller/edge-iot/assets/43891487/db83ec13-d95a-4153-ad0e-078c2cbca759)
+
+- (multiple) ESP32 Inference, (one) Raspberry Training
+- (multiple) Raspberry Inference, (one) Cloud Training
+- (multiple) Raspberry Inference (+ Training) + interconnected  
+- (multiple) ESP32 send data to Raspberry/Could
+
 ## Directory Structure
 
 ```markdown
