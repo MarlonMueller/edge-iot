@@ -19,8 +19,8 @@ Edge Computing and the Internet of Things
 │       # GitHub Actions workflow for continuous integration
 ├── docs/
 │   # Documentation for the project
-│   ├── user_guide.md
-│   ├── api_reference.md
+│   ├── slides/
+│   │   └── 00_idea_presentation.pdf
 │   └── ...
 ├── src/
 │   # Source code for your federated learning application
