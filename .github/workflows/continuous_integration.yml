@@ -1,0 +1,16 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Mic
+        run: echo "Mic works"
+
+      - name: Test Bird Sounds
+        run: echo "Chirp Chirp"
