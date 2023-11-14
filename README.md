@@ -3,7 +3,7 @@
 ## Getting Started
 
 ```
-conda create -n edge-iot python=3.8.18 pip
+conda create -n edge-iot python=3.8.18
 conda activate edge-iot
 pip install -r requirements.txt
 ```
@@ -23,7 +23,15 @@ pip install -r requirements.txt
 │   ├── reports/
 │   │   └── 00_idea_report.pdf
 ├── src/
-│   ├── main.py
+│   ├── _example
+│   ├── audio/
+│   │   ├── preprocess.py
+│   ├── data/
+│   │   ├── xeno_canto.py
+│   ├── model/
+│   │   ├── model.py
+│   ├── utils/
+│   │   ├── visualisation.py
 ├── data/
 ├── config/
 ├── tests/
