@@ -1,7 +1,12 @@
 # edge-iot
-Edge Computing and the Internet of Things
 
-![Architecture Design](assets/architecture_design.png)
+## Getting Started
+
+```
+conda create -n edge-iot python=3.8.18 pip
+conda activate edge-iot
+pip install -r requirements.txt
+```
 
 ## Directory Structure
 
@@ -28,3 +33,7 @@ Edge Computing and the Internet of Things
 ├── .gitignore
 ├── README.md
 ```
+
+## Architecture
+
+![Architecture Design](assets/architecture_design.png)
