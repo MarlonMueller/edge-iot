@@ -97,7 +97,7 @@ def get_composite_page(query: Dict[str, str]) -> Page:
     ), "totalRecordings do not add up"
     composite_page.numPages = 1
 
-    print(page)
+    print(composite_page)
     return composite_page
 
 
