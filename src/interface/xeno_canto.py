@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 
 
 from src.utils import COLORS
+from src.utils.counter import Counter
 from src.utils.visualisation import plot_image
 
 
@@ -57,10 +58,10 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
     recordings_df = pd.json_normalize(response.pop("recordings"))
     assert len(recordings_df) > 0, "numRecordings on page is zero"
     recordings_df = recordings_df.set_index("id")
-    
+
     # Replace en field of recordings with lower and _-separated string
     recordings_df["en"] = recordings_df["en"].str.lower().str.replace(" ", "_")
-    
+
     return Page(**response, recordings=recordings_df)
 
 
@@ -98,12 +99,80 @@ async def _get_audio(url: str, path: str):
     """Download audio file from url to path"""
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-        response.raise_for_status()
+        response = None
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
 
-        with open(path, "wb") as file:
-            for chunk in response.iter_bytes():
-                file.write(chunk)
+            with open(path, "wb") as file:
+                for chunk in response.iter_bytes():
+                    file.write(chunk)
+
+        finally:
+            if response is not None:
+                await response.aclose()
+
+
+async def _download_audio(
+    id,
+    page,
+    species_map,
+    dir,
+    annotation_path,
+    columns,
+    semaphore,
+    progress_bar,
+    num_errors,
+    lock
+):
+    """Download audio file and document in annotation file"""
+
+    async with semaphore:
+        try:
+            # Extract species name from 'en' field and map to numeric value
+            cls_str = page.recordings.loc[id].en
+            cls_id = species_map[cls_str]
+
+            # Get file names
+            file_name = page.recordings.loc[id]["file-name"]
+            if ".mp3" in file_name:
+                file_name = f"x-{id}-{cls_id}-0.mp3"
+            elif ".wav" in file_name:
+                file_name = f"x-{id}-{cls_id}-0.wav"
+            else:
+                warnings.warn(f"{file_name} not .mp3 or .wav")
+
+            audio_path = os.path.join(dir, "audio", file_name)
+            if not os.path.isfile(audio_path):
+                await asyncio.create_task(
+                    _get_audio(
+                        page.recordings.loc[id]["file"],
+                        audio_path,
+                    )
+                )
+
+                async with lock:
+                    # Document audio file in annotation file
+                    with open(annotation_path, mode="a", newline="") as file:
+                        writer = csv.DictWriter(file, fieldnames=columns)
+                        writer.writerow(
+                            {
+                                "file_name": file_name,
+                                "class_id": cls_id,
+                                "class": cls_str,
+                                "xeno_id": id,
+                                "slice": 0,
+                                "quality": page.recordings.loc[id]["q"],
+                                "length": page.recordings.loc[id]["length"],
+                                "sampling_rate": page.recordings.loc[id]["smp"],
+                            }
+                        )
+
+        except httpx.HTTPError as e:
+            num_errors.increment()
+
+        finally:
+            progress_bar.update(1)
 
 
 def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -> Page:
@@ -139,7 +208,7 @@ async def get_page_audio(
     page: Page,
     dir: str,
     ids: List[str] = None,
-):
+) -> Dict[str, int]:
     """Download audio files from page to dir/audio and creates a .csv annotation file.
 
     numeric_species_map: map of bird species name to numeric value
@@ -176,58 +245,37 @@ async def get_page_audio(
     if not os.path.isfile(annotation_path):
         pd.DataFrame(columns=columns).to_csv(annotation_path, index=False)
 
+    tasks = []
+    lock = asyncio.Lock()
+    num_errors = Counter()
+    semaphore = asyncio.Semaphore(5)
+
     total_downloads = len(ids)
     progress_bar = tqdm(total=total_downloads, unit="download", dynamic_ncols=True)
 
-    async def download_and_track(url, path, progress_bar):
-        await _get_audio(url, path)
-        progress_bar.update(1)
-
-    with open(annotation_path, mode="a", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=columns)
-
-        tasks = []
-        for id in ids:
-            # Extract species name from 'en' field and map to numeric value
-            cls_str = page.recordings.loc[id].en
-            cls_id = species_map[cls_str]
-
-            # Get file names
-            file_name = page.recordings.loc[id]["file-name"]
-            if ".mp3" in file_name:
-                file_name = f"x-{id}-{cls_id}-0.mp3"
-            elif ".wav" in file_name:
-                file_name = f"x-{id}-{cls_id}-0.wav"
-            else:
-                warnings.warn("no .mp3 or .wav suffix")
-
-            audio_path = os.path.join(dir, "audio", file_name)
-            if not os.path.isfile(audio_path):
-                # Download audio file
-                task = asyncio.create_task(
-                    download_and_track(
-                        page.recordings.loc[id]["file"], audio_path, progress_bar
-                    )
-                )
-                tasks.append(task)
-
-                # Document audio file in annotation file
-                writer.writerow(
-                    {
-                        "file_name": file_name,
-                        "class_id": cls_id,
-                        "class": cls_str,
-                        "xeno_id": id,
-                        "slice": 0,
-                        "quality": page.recordings.loc[id]["q"],
-                        "length": page.recordings.loc[id]["length"],
-                        "sampling_rate": page.recordings.loc[id]["smp"],
-                    }
-                )
+    for id in ids:
+        task = asyncio.create_task(
+            _download_audio(
+                id,
+                page,
+                species_map,
+                dir,
+                annotation_path,
+                columns,
+                semaphore,
+                progress_bar,
+                num_errors,
+                lock
+            )
+        )
+        tasks.append(task)
 
     await asyncio.gather(*tasks)
 
     progress_bar.close()
+
+    print(f"Attempted {total_downloads} downloads, {num_errors.value()} failed")
+    return species_map
 
 
 def get_field(page: Page, id: str, field: str, prefix=True):
@@ -257,7 +305,8 @@ def plot_distribution(page: Page, threshold: int = 5):
     species_percentages = species_counts / total_bird_observations * 100
     top_species = species_percentages[species_percentages >= threshold]
     other_species_count = species_percentages[species_percentages < threshold].sum()
-    top_species["Other"] = other_species_count
+    if other_species_count > 0:
+        top_species["Other"] = other_species_count
 
     plt.figure(figsize=(8, 8))
     plt.pie(

@@ -12,3 +12,4 @@ COLORS = [
 ]
 
 from . import visualisation
+from .counter import Counter
