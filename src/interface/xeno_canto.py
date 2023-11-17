@@ -149,6 +149,27 @@ async def get_page_audio(page: Page, dir: str, ids: List[str] = None):
     progress_bar.close()
 
 
+def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -> Page:
+    """Filter page to only include top k species"""
+    
+    df = page.recordings
+    
+    species_counts = df["en"].value_counts()
+    
+    if exclude_unknown and "Identity unknown" in species_counts[:k]:
+        species_counts = species_counts.drop("Identity unknown")
+    
+    top_species = species_counts[:k]
+    top_species = top_species.index
+    print(f"Top {k} species:", top_species)
+    
+    page.recordings = page.recordings[page.recordings["en"].isin(top_species)]
+    page.numRecordings = len(page.recordings)
+    page.numSpecies = len(top_species)
+    print(f"Filtered page: {page}")
+    return page
+    
+
 def get_field(page: Page, id: str, field: str, prefix=True):
     url = page.recordings.loc[id][field]
     url = f"https:{url}" if prefix else url
