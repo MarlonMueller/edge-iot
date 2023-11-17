@@ -1,6 +1,7 @@
 from typing import Dict, List
 
 import os
+import csv
 import asyncio
 import warnings
 from PIL import Image
@@ -68,6 +69,10 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
     recordings_df = pd.json_normalize(response.pop("recordings"))
     assert len(recordings_df) > 0, "numRecordings on page is zero"
     recordings_df = recordings_df.set_index("id")
+    
+    # Replace en field of recordings with lower and _-separated string
+    recordings_df["en"] = recordings_df["en"].str.lower().str.replace(" ", "_")
+    
     return Page(**response, recordings=recordings_df)
 
 
@@ -113,12 +118,75 @@ async def _get_audio(url: str, path: str):
                 file.write(chunk)
 
 
-async def get_page_audio(page: Page, dir: str, ids: List[str] = None):
-    """Download audio files from page to dir"""
+def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -> Page:
+    """Filter page to only include top k species"""
+
+    df = page.recordings
+
+    species_counts = df["en"].value_counts()
+
+    if exclude_unknown and "Identity unknown" in species_counts[:k]:
+        species_counts = species_counts.drop("Identity unknown")
+
+    top_species = species_counts[:k]
+    top_species = top_species.index
+    print(f"Top {k} species:", top_species)
+
+    page.recordings = page.recordings[page.recordings["en"].isin(top_species)]
+    page.numRecordings = len(page.recordings)
+    page.numSpecies = len(top_species)
+    print(f"Filtered page: {page}")
+    return page
+
+
+def get_numeric_species_map(page: Page):
+    """Get a map of species names to numeric values"""
+    species_names = page.recordings["en"].unique()
+    species_map = {name: i for i, name in enumerate(species_names)}
+    print("Species map:", species_map)
+    return species_map
+
+
+async def get_page_audio(
+    page: Page,
+    dir: str,
+    ids: List[str] = None,
+):
+    """Download audio files from page to dir/audio and creates a .csv annotation file.
+
+    numeric_species_map: map of bird species name to numeric value
+    ids: list of recording ids to download
+
+    Format: x-[x_id]-[cls_id]-[slice].{mp3/wav}
+
+    x_id: Xeno-Canto recording id
+    cls_id: numeric species id
+    slice: 0 (fix)
+
+    """
     os.makedirs(dir, exist_ok=True)
 
     if ids is None:
         ids = page.recordings.index
+
+    # Get species map that maps species names to numeric values
+    species_map = get_numeric_species_map(page)
+
+    # Create annotation file
+    columns = [
+        "file_name",
+        "class_id",
+        "class",
+        "xeno_id",
+        "slice",
+        "quality",
+        "length",
+        "sampling_rate",
+    ]
+
+    annotation_path = os.path.join(dir, "x-annotation.csv")
+    if not os.path.isfile(annotation_path):
+        pd.DataFrame(columns=columns).to_csv(annotation_path, index=False)
 
     total_downloads = len(ids)
     progress_bar = tqdm(total=total_downloads, unit="download", dynamic_ncols=True)
@@ -127,48 +195,52 @@ async def get_page_audio(page: Page, dir: str, ids: List[str] = None):
         await _get_audio(url, path)
         progress_bar.update(1)
 
-    tasks = []
-    for id in ids:
-        en = (page.recordings.loc[id].en).lower().replace(" ", "_")
-        file_name = page.recordings.loc[id]["file-name"]
-        if ".mp3" in file_name:
-            path = f"{dir}/{en}_{id}.mp3"
-        elif ".wav" in file_name:
-            path = f"{dir}/{en}_{id}.wav"
-        else:
-            warnings.warn("no .mp3 or .wav suffix")
+    with open(annotation_path, mode="a", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=columns)
 
-        if not os.path.exists(path):
-            task = asyncio.create_task(
-                download_and_track(page.recordings.loc[id]["file"], path, progress_bar)
-            )
-            tasks.append(task)
+        tasks = []
+        for id in ids:
+            # Extract species name from 'en' field and map to numeric value
+            cls_str = page.recordings.loc[id].en
+            cls_id = species_map[cls_str]
+
+            # Get file names
+            file_name = page.recordings.loc[id]["file-name"]
+            if ".mp3" in file_name:
+                file_name = f"x-{id}-{cls_id}-0.mp3"
+            elif ".wav" in file_name:
+                file_name = f"x-{id}-{cls_id}-0.wav"
+            else:
+                warnings.warn("no .mp3 or .wav suffix")
+
+            audio_path = os.path.join(dir, "audio", file_name)
+            if not os.path.isfile(audio_path):
+                # Download audio file
+                task = asyncio.create_task(
+                    download_and_track(
+                        page.recordings.loc[id]["file"], audio_path, progress_bar
+                    )
+                )
+                tasks.append(task)
+
+                # Document audio file in annotation file
+                writer.writerow(
+                    {
+                        "file_name": file_name,
+                        "class_id": cls_id,
+                        "class": cls_str,
+                        "xeno_id": id,
+                        "slice": 0,
+                        "quality": page.recordings.loc[id]["q"],
+                        "length": page.recordings.loc[id]["length"],
+                        "sampling_rate": page.recordings.loc[id]["smp"],
+                    }
+                )
 
     await asyncio.gather(*tasks)
 
     progress_bar.close()
 
-
-def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -> Page:
-    """Filter page to only include top k species"""
-    
-    df = page.recordings
-    
-    species_counts = df["en"].value_counts()
-    
-    if exclude_unknown and "Identity unknown" in species_counts[:k]:
-        species_counts = species_counts.drop("Identity unknown")
-    
-    top_species = species_counts[:k]
-    top_species = top_species.index
-    print(f"Top {k} species:", top_species)
-    
-    page.recordings = page.recordings[page.recordings["en"].isin(top_species)]
-    page.numRecordings = len(page.recordings)
-    page.numSpecies = len(top_species)
-    print(f"Filtered page: {page}")
-    return page
-    
 
 def get_field(page: Page, id: str, field: str, prefix=True):
     url = page.recordings.loc[id][field]
