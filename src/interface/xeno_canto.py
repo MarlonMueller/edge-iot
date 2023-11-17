@@ -24,18 +24,6 @@ https://xeno-canto.org/explore/api
 https://xeno-canto.org/help/search
 """
 
-QUERY = {
-    "area": "europe",
-    "grp": "1",  # birds
-    "cnt": "germany",
-    "loc": "bavaria",
-    # box:LAT_MIN,LON_MIN,LAT_MAX,LON_MAX,
-    # lic: '',       #license,
-    #'q':">C",      #quality
-    "len": "10-15",  # length (s)
-    #'smp': ''       # sampling rate
-    #'since': ''     # upload date
-}
 
 API_URL = "https://xeno-canto.org/api/2/recordings"
 
@@ -125,8 +113,8 @@ def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -
 
     species_counts = df["en"].value_counts()
 
-    if exclude_unknown and "Identity unknown" in species_counts[:k]:
-        species_counts = species_counts.drop("Identity unknown")
+    if exclude_unknown and "identity_unknown" in species_counts[:k]:
+        species_counts = species_counts.drop("identity_unknown")
 
     top_species = species_counts[:k]
     top_species = top_species.index
