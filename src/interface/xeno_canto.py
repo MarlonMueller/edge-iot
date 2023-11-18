@@ -117,7 +117,7 @@ async def _download_audio(
     id,
     page,
     species_map,
-    dir,
+    audio_dir,
     annotation_path,
     columns,
     semaphore,
@@ -142,7 +142,7 @@ async def _download_audio(
             else:
                 warnings.warn(f"{file_name} not .mp3 or .wav")
 
-            audio_path = os.path.join(dir, "audio", file_name)
+            audio_path = os.path.join(audio_dir, file_name)
             if not os.path.isfile(audio_path):
                 await asyncio.create_task(
                     _get_audio(
@@ -206,10 +206,11 @@ def get_numeric_species_map(page: Page):
 
 async def get_page_audio(
     page: Page,
-    dir: str,
+    audio_dir: str,
+    annotation_path: str,
     ids: List[str] = None,
 ) -> Dict[str, int]:
-    """Download audio files from page to dir/audio and creates a .csv annotation file.
+    """Download audio files from page to audio_dir and creates a annotation file at annotation_path.
 
     numeric_species_map: map of bird species name to numeric value
     ids: list of recording ids to download
@@ -221,7 +222,7 @@ async def get_page_audio(
     slice: 0 (fix)
 
     """
-    os.makedirs(dir, exist_ok=True)
+    os.makedirs(audio_dir, exist_ok=True)
 
     if ids is None:
         ids = page.recordings.index
@@ -241,7 +242,6 @@ async def get_page_audio(
         "sampling_rate",
     ]
 
-    annotation_path = os.path.join(dir, "x-annotation.csv")
     if not os.path.isfile(annotation_path):
         pd.DataFrame(columns=columns).to_csv(annotation_path, index=False)
 
@@ -259,7 +259,7 @@ async def get_page_audio(
                 id,
                 page,
                 species_map,
-                dir,
+                audio_dir,
                 annotation_path,
                 columns,
                 semaphore,
