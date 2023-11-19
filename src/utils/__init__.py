@@ -11,5 +11,6 @@ COLORS = [
     "#b9a2c5",
 ]
 
-from . import visualisation
 from .counter import Counter
+from .vis import plot_image, plot_wave, plot_mel
+from .model import save_model, load_model, export_onnx

@@ -13,10 +13,7 @@ import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 
-
-from src.utils import COLORS
-from src.utils.counter import Counter
-from src.utils.visualisation import plot_image
+from src import utils
 
 
 """
@@ -123,7 +120,7 @@ async def _download_audio(
     semaphore,
     progress_bar,
     num_errors,
-    lock
+    lock,
 ):
     """Download audio file and document in annotation file"""
 
@@ -247,7 +244,7 @@ async def get_page_audio(
 
     tasks = []
     lock = asyncio.Lock()
-    num_errors = Counter()
+    num_errors = utils.Counter()
     semaphore = asyncio.Semaphore(5)
 
     total_downloads = len(ids)
@@ -265,7 +262,7 @@ async def get_page_audio(
                 semaphore,
                 progress_bar,
                 num_errors,
-                lock
+                lock,
             )
         )
         tasks.append(task)
@@ -287,13 +284,13 @@ def get_field(page: Page, id: str, field: str, prefix=True):
 def plot_sono(page: Page, id: str, version: str = "small"):
     field = "sono." + version
     response = get_field(page, id, field)
-    plot_image(Image.open(BytesIO(response.content)))
+    utils.plot_image(Image.open(BytesIO(response.content)))
 
 
 def plot_osci(page: Page, id: str, version: str = "small"):
     field = "osci." + version
     response = get_field(page, id, field)
-    plot_image(Image.open(BytesIO(response.content)))
+    utils.plot_image(Image.open(BytesIO(response.content)))
 
 
 def plot_distribution(page: Page, threshold: int = 5):
@@ -314,7 +311,7 @@ def plot_distribution(page: Page, threshold: int = 5):
         labels=top_species.index,
         autopct="%1.1f%%",
         startangle=140,
-        colors=COLORS,
+        colors=utils.COLORS,
         explode=[0.05] * len(top_species),
     )
     plt.title("Distribution of Bird Species")

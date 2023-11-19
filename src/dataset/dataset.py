@@ -22,6 +22,11 @@ class BirdDataset(Dataset):
     def __getitem__(self, idx):
         audio_path = os.path.join(self.audio_dir, self.labels.iloc[idx, 0])
         mfcc = preprocess.mfcc_from_file(audio_path, False)
+        
+        #FIXME - uniform mfcc length
+        #print(audio_path, mfcc.shape)
+        mfcc = mfcc[:, :3000]
+        
         label = self.labels.iloc[idx, 1]
         
         if self.transform:

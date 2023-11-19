@@ -5,7 +5,7 @@ from torchsummary import summary
 
 class CustomModel(nn.Module):
     
-    def __init__(self, input_size):
+    def __init__(self, input_size, num_classes):
         super(CustomModel, self).__init__()
         
         print(f"Size of input: {input_size}")
@@ -27,13 +27,12 @@ class CustomModel(nn.Module):
             nn.Dropout(0.5),
             nn.Linear(self._calculate_feature_size(channels, height, width), 128),
             nn.Dropout(0.5),
-            nn.Linear(128, 5),
-            nn.Sigmoid(),
+            nn.Linear(128, num_classes),
         )
 
     def forward(self, x):
         x = self.features(x)
-        print(x.size())
+        #print(x.size())
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
