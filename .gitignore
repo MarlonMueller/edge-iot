@@ -1,6 +1,7 @@
 .vscode/
 
 *.pyc 
+models/
 venv/
 data/
 build/

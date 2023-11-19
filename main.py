@@ -5,14 +5,13 @@ import torch
 import pathlib
 import asyncio
 from torchvision import transforms
-from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 from src.interface import xeno_canto, esc50
 from src.dataset import BirdDataset
 from src.model import CustomModel
 from src import procedures, model, utils
+from src.procedures import optimize
 import torch.optim as optim
-from onnx import checker
 
 PATH = pathlib.Path(__file__).parent.resolve()
 
@@ -53,8 +52,8 @@ if __name__ == "__main__":
     # species_map["other_sound"] = num_species
 
     # Exit program
-    import sys
-    sys.exit()
+    #import sys
+    #sys.exit()
     
     ########################################################
     #  Deep Learning
@@ -104,16 +103,23 @@ if __name__ == "__main__":
             net, test_dataloader, criterion, device, create_classification_report
         )
     
-    utils.save_model(net, models_dir, model_name)
+    torch_dir = os.path.join(models_dir, "torch")
+    utils.save_model(net, torch_dir, model_name)
 
     ########################################################
     #  ONNX
     ########################################################
+    utils.load_model(net, torch_dir, model_name)
 
+    onnx_dir = os.path.join(models_dir, "onnx")
 
-    utils.load_model(net, models_dir, model_name)
-    utils.export_onnx(net, models_dir, model_name, input_size)
-
+    utils.export_onnx(net, onnx_dir, model_name, input_size)
+    utils.load_onnx(onnx_dir, model_name)
+    
+    optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
+    
+    # Calibration
+    #TODO - 
 
 
     
