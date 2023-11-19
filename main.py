@@ -26,22 +26,15 @@ if __name__ == "__main__":
     ########################################################
     
     data_dir = os.path.join(PATH, "data")
+    
+    config_path = os.path.join(PATH, "config")
+    
+    query = utils.load_config(config_path, "xeno-canto.yaml")["query"]
 
+    
     # esc50.get_esc50_audio(dir)
-
-    query = {
-        "area": "europe",
-        "grp": "1",  # birds
-        "cnt": "germany",
-        # "loc": "bavaria",
-        # box:LAT_MIN,LON_MIN,LAT_MAX,LON_MAX,
-        # lic: '',       #license,
-        #'q':">C",      #quality
-        "len": "5",  # length (s)
-        #'smp': ''       # sampling rate
-        #'since': ''     # upload date
-    }
-
+    
+    
     num_species = 3
     audio_dir = os.path.join(data_dir, "audio")
     annotation_path = os.path.join(data_dir, "annotations.csv")
@@ -60,8 +53,8 @@ if __name__ == "__main__":
     # species_map["other_sound"] = num_species
 
     # Exit program
-    # import sys
-    # sys.exit()
+    import sys
+    sys.exit()
     
     ########################################################
     #  Deep Learning

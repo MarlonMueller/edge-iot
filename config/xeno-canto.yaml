@@ -1,0 +1,11 @@
+query:
+  area: europe
+  grp: "1"  # birds
+  cnt: germany
+  # loc: bavaria
+  # box: LAT_MIN,LON_MIN,LAT_MAX,LON_MAX
+  # lic: ""       # license
+  # q: ">C"      # quality
+  len: "5"       # length (s)
+  # smp: ""      # sampling rate
+  # since: ""    # upload date
