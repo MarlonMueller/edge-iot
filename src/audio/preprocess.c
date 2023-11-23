@@ -1,15 +1,41 @@
 /**
  * @file preprocess.c
  * @brief Audio preprocessing functions
+ * 
+ * This file contains the implementation of the audio preprocessing functions.
+ * For PC compilation, RUN_PC directive must be defined.
 */
 #include "audio/preprocess.h"
 
 #include <math.h>
 
+#ifndef RUN_PC
+
 #include "esp_log.h"
 #include "dsps_fft2r.h" // For FFT computation
 #include "dsps_wind_hann.h" // For Hann windowing function
 #include "dsps_dct.h" // For DCT computation
+
+#else
+
+// Change of ESP_LOGE, ESP_LOGI and ESP_LOGD to printf
+
+#define ESP_LOGE(tag, format, ...) \
+            printf("[%s] ERROR: " format "\n", tag, ##__VA_ARGS__)
+
+#define ESP_LOGI(tag, format, ...) \
+            printf("[%s]: " format "\n", tag, ##__VA_ARGS__)
+
+// Definition of other functions needed
+
+#include "sim_dsp/aux_err.h"
+#include "sim_dsp/aux_fft.h"
+#include "sim_dsp/aux_wind.h"
+#include "sim_dsp/aux_dct.h"
+
+#endif
+
+
 
 static const char *PREPROCESS_TAG = "PREPROCESS";
 
@@ -136,7 +162,7 @@ esp_err_t malloc_mfcc_module() {
     }
 
     // fft -> possible optimization: have it as a global variable
-    
+
     dsps_fft2r_init_fc32(NULL, NUM_FFT);
     dsps_wind_hann_f32(window, WIN_LENGTH_SAMPLES); // Checked
     mel_filters(mel_filt);

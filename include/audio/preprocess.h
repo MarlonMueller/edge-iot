@@ -8,8 +8,11 @@
 #ifndef DEEP_BIRD_AUDIO_PREPROCESS_H
 #define DEEP_BIRD_AUDIO_PREPROCESS_H
 
+#ifndef RUN_PC
 #include "esp_err.h"
-
+#else
+#include "sim_dsp/aux_err.h"
+#endif
 /*
  * @brief Read Short-time Fourier transform from file. 
  * 
@@ -25,8 +28,6 @@
  * @brief Initialization of MFCC preprocessing module. Memory sizes allocated.
  * 
  * @return Error values according to ESP-IDF coding style.
- * 
- * TBD: Maybe just call this function inside mfcc. 
 */
 esp_err_t malloc_mfcc_module();
 
@@ -57,8 +58,6 @@ esp_err_t mfcc(const float *wav_values, size_t num_samples,
  * @brief Free memory allocated for MFCC preprocessing module.
  * 
  * @return ESP_OK if success, otherwise undetermined.
- * 
- * TBD: Maybe just call this function inside mfcc.
 */
 esp_err_t free_mfcc_module();
 

@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import argparse
+import scipy
 
 # CONSTANTS. Need to be adjusted for our application.
 N_FFT = 512
@@ -36,8 +37,10 @@ def mfcc_from_file(file: str, plot: bool = False) -> np.ndarray:
         sr=sr, 
         n_fft=N_FFT, 
         hop_length=HOP_LENGTH, 
+        win_length = N_FFT,
         n_mfcc=N_MELS,
-        # maybe dtype once we want to obtain the MFCC directly in PSOC
+        htk = True,
+        window = scipy.signal.windows.hann,
     )
 
     # Plot
