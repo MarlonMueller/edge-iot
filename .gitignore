@@ -1,9 +1,21 @@
 .vscode/
 
 *.pyc 
-models/
+
+#models/cpp/*
+models/onnx/*
+models/torch/*
+!models/cpp/.gitkeep
+!models/onnx/.gitkeep
+!models/torch/.gitkeep
+
+data/annotations.csv
+data/audio/*
+data/img/*
+!data/audio/.gitkeep
+!data/img/.gitkeep
+
 venv/
-data/
 build/
 # automatic dependences created by ESP32 IDF framework
 managed_components/

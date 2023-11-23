@@ -8,7 +8,53 @@ conda activate edge-iot
 pip install -r requirements.txt
 ```
 
-Xeno-Canto Interface:
+
+## Directory Structure
+
+```markdown
+
+./edge-iot
+├── .github/
+│   └── workflows/
+│       └── continuous_integration.yml
+├── assets/
+├── config/
+│   └── xeno-canto.yaml
+├── data/
+│   ├── audio/
+│   └── img/
+├── docs/
+│   ├── slides/
+│   └── reports/
+├── include/
+│   └── audio/
+│       └── preprocess.h
+├── models/
+│   ├── cpp/
+│   ├── onnx/
+│   └── torch/
+├── src/
+│   ├── _example
+│   ├── audio/
+│   ├── dataset/
+│   ├── esp32/
+│   ├── interface/
+│   ├── model/
+│   ├── procedures/
+│   ├── utils/
+├── tests/
+├── .gitignore
+├── .pre-commit-config.yaml
+├── CMakeLists.txt
+├── README.md
+├── dependencies.lock
+├── main.py
+├── requirements.txt
+├── requirements_idf.txt
+```
+
+
+## Xeno-Canto Interface
 
 Files are downloaded to data/
 
@@ -30,40 +76,6 @@ The download also generates a annoation file in data/annotations.csv; columns:
 - length is the length of the recording
 - sampling_rate is the sampling rate of the recording
 
-
-## Directory Structure
-
-```markdown
-
-./edge-iot
-├── .github/
-│   └── workflows/
-│       └── continuous_integration.yml
-├── docs/
-│   # Documentation for the project
-│   ├── slides/
-│   │   └── 00_idea_presentation.pdf
-│   ├── reports/
-│   │   └── 00_idea_report.pdf
-├── src/
-│   ├── _example
-│   ├── audio/
-│   │   ├── preprocess.py
-│   ├── data/
-│   │   ├── xeno_canto.py
-│   ├── model/
-│   │   ├── model.py
-│   ├── utils/
-│   │   ├── visualisation.py
-├── data/
-├── config/
-├── tests/
-├── bin/
-├── lib/
-├── Dockerfile
-├── .gitignore
-├── README.md
-```
 
 ## Architecture
 

@@ -115,7 +115,7 @@ if __name__ == "__main__":
     ########################################################
     #  ONNX
     ########################################################
-     onnx_dir = os.path.join(models_dir, "onnx")
+    onnx_dir = os.path.join(models_dir, "onnx")
 
     utils.export_onnx(model, onnx_dir, model_name, input_size)
     utils.load_onnx(onnx_dir, model_name, check_graph=True)
@@ -141,13 +141,14 @@ if __name__ == "__main__":
     calib = Calibrator(quantization_bit, granularity, calib_method)
     calib.set_providers([provider])
 
-    quantization_params_path = os.path.join(cpp_dir, "{model_name}_quantization_params.pickle")
+    cpp_file_name = f"{model_name}_coefficient"
+    quantization_params_path = os.path.join(cpp_dir, f"{model_name}_quantization_params.pickle")
 
     # Generate quantization table
     calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
     
     # Export model to cpp
-    calib.export_coefficient_to_cpp(model_proto, pickle_path, target_chip, cpp_dir, f'{model_name}_coefficient', True)
+    calib.export_coefficient_to_cpp(model_proto, quantization_params_path, target_chip, cpp_dir, cpp_file_name, True)
     
     ########################################################
     #  QUANTIZATION EVALUATION
