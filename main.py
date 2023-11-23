@@ -21,8 +21,6 @@ from calibrator import *
 from evaluator import *
 
 
-# FIXME  Other bird class?
-
 if __name__ == "__main__":
     
     
@@ -35,10 +33,6 @@ if __name__ == "__main__":
     config_path = os.path.join(PATH, "config")
     
     query = utils.load_config(config_path, "xeno-canto.yaml")["query"]
-
-    
-    # esc50.get_esc50_audio(dir)
-    
     
     num_species = 3
     audio_dir = os.path.join(data_dir, "audio")
@@ -85,7 +79,7 @@ if __name__ == "__main__":
     )
     input_size = train_data[0][0].size()
 
-    model_name = "bird_model"
+    model_name = "bird"
     models_dir = os.path.join(PATH, "models")
 
     ########################################################
@@ -121,57 +115,52 @@ if __name__ == "__main__":
     ########################################################
     #  ONNX
     ########################################################
-    # utils.load_model(model, torch_dir, model_name)
-
-    onnx_dir = os.path.join(models_dir, "onnx")
+     onnx_dir = os.path.join(models_dir, "onnx")
 
     utils.export_onnx(model, onnx_dir, model_name, input_size)
     utils.load_onnx(onnx_dir, model_name, check_graph=True)
     
     optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
     
+    ########################################################
+    #  QUANTIZATION
+    ########################################################
+    cpp_dir = os.path.join(models_dir, "cpp")
+    
+    target_chip = "esp32"
+    quantization_bit = "int8"
+    granularity = "per-tensor"
+    calib_method = "minmax"
+    provider = "CPUExecutionProvider"
 
-    # TODO: Preprocessing & size 
     calib_dataloader = DataLoader(test_data, batch_size=len(test_data))
     calib_data = next(iter(calib_dataloader))[0].numpy()
-
-
-    import pickle
-    #with open("test.pickle", "wb") as f:
-    #    pickle.dump(calib_data, f)
-
-    with open("params.pickle", "rb") as f:
-        print(pickle.load(f))
-
-
     model_proto = utils.load_onnx(onnx_dir, model_name)
-
     
-    print('Generating the quantization table:')
+    # Calibration dataset
+    calib = Calibrator(quantization_bit, granularity, calib_method)
+    calib.set_providers([provider])
 
+    quantization_params_path = os.path.join(cpp_dir, "{model_name}_quantization_params.pickle")
 
-    """
-    int8, int16
-    per-tensor, per-channel
-    minmax, entropy
-    """
-
-    calib = Calibrator('int8', 'per-tensor', 'minmax')
-    calib.set_providers(['CPUExecutionProvider'])
-
-    pickle_path = "./params.pickle"
-
-    calib.generate_quantization_table(model_proto, calib_data, pickle_path)
-    calib.export_coefficient_to_cpp(model_proto, pickle_path, 'esp32', '.', 'bird_coefficient', True)
-
-
+    # Generate quantization table
+    calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
     
+    # Export model to cpp
+    calib.export_coefficient_to_cpp(model_proto, pickle_path, target_chip, cpp_dir, f'{model_name}_coefficient', True)
+    
+    ########################################################
+    #  QUANTIZATION EVALUATION
+    ########################################################
+    
+    # eva = Evaluator(quantization_bit, granularity, target_chip)
+    # eva.set_providers([provider])
+    # eva.generate_quantized_model(model_proto, quantization_params_path)
 
-    # print('Generating the quantization table:')
-    # calib = Calibrator('int16', 'per-tensor', 'minmax')
-    # calib.set_providers(['CPUExecutionProvider'])
-    # calib.generate_quantization_table(model_proto, calib_dataset, pickle_file_path)
-    # calib.export_coefficient_to_cpp(model_proto, pickle_file_path, 'esp32s3', '.', 'mnist_coefficient', True)
+    # output_names = [n.name for n in model_proto.graph.output]
+    # m = rt.InferenceSession(optimized_model_path, providers=[provider])
+
+    #TODO - 
 
 
     
