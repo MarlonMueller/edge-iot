@@ -261,13 +261,13 @@ esp_err_t mfcc(const float *wav_values, size_t num_samples,
         }
 
         // DCT computation. This output is different than Librosa's. 
-
-        dsps_dct_f32(mel_buffer, N_MELS); 
+        float dct_output[N_MELS];
+        dsps_dct_f32_ref(mel_buffer, N_MELS, dct_output); 
 
         // Store result
         
         for (size_t j=0; j<N_MELS; ++j) {
-            (*output)[i][j] = mel_buffer[j];
+            (*output)[i][j] = dct_output[j];
         }
         
     }
