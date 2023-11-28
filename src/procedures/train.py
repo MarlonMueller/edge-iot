@@ -3,7 +3,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 
-def train(model: nn.Module, data_loader: DataLoader, optimizer, criterion, epoch, device):
+def train(
+    model: nn.Module, data_loader: DataLoader, optimizer, criterion, epoch, device
+):
     model.train()
 
     epoch_loss = 0
@@ -25,4 +27,7 @@ def train(model: nn.Module, data_loader: DataLoader, optimizer, criterion, epoch
 
         optimizer.step()
 
-    print(f"[Training] Epoch: {epoch}, Loss: {epoch_loss/len(data_loader)}")
+    print(
+        f"[Training] Epoch: {epoch:3d}, Loss: {epoch_loss/len(data_loader):.6f}",
+        end=" - ",
+    )

@@ -8,7 +8,7 @@ models/torch/*
 !models/cpp/.gitkeep
 !models/onnx/.gitkeep
 !models/torch/.gitkeep
-
+*.h5
 data/annotations.csv
 data/audio/*
 data/img/*

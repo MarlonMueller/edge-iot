@@ -37,7 +37,7 @@ def test(
     ground_truth = np.concatenate(ground_truth)
 
     print(
-        f"[Testing] Loss: {epoch_loss/len(data_loader)}, Accuracy: {accuracy_score(ground_truth, predictions)}"
+        f"[Testing] Loss: {epoch_loss/len(data_loader):.6f}, Accuracy: {accuracy_score(ground_truth, predictions):.6f}"
     )
 
     if create_classification_report:
