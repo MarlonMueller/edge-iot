@@ -132,12 +132,13 @@ async def _download_audio(
 
             # Get file names
             file_name = page.recordings.loc[id]["file-name"]
+
             if ".mp3" in file_name:
                 file_name = f"x-{id}-{cls_id}-0.mp3"
             elif ".wav" in file_name:
                 file_name = f"x-{id}-{cls_id}-0.wav"
             else:
-                warnings.warn(f"{file_name} not .mp3 or .wav")
+                raise ValueError(f"{file_name} not .mp3 or .wav")
 
             audio_path = os.path.join(audio_dir, file_name)
             if not os.path.isfile(audio_path):
@@ -165,8 +166,9 @@ async def _download_audio(
                             }
                         )
 
-        except httpx.HTTPError as e:
-            num_errors.increment()
+        except (httpx.HTTPError, ValueError) as e:
+            print(f"Error downloading {id}: {str(e)}")
+            await num_errors.increment()
 
         finally:
             progress_bar.update(1)
