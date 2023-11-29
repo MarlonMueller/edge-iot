@@ -33,7 +33,7 @@ class CustomModel(nn.Module):
         x = self.pool3(self.relu3(self.conv3(x)))
         x = torch.flatten(x, 1)
         x = self.fc2(self.relu4(self.fc1(x)))
-        output = F.log_softmax(x, -1)
+        output = F.softmax(x, -1)
         return output
 
         # print(x.size())

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from sklearn.metrics import classification_report, accuracy_score
 
@@ -8,7 +9,6 @@ from sklearn.metrics import classification_report, accuracy_score
 def test(
     model: nn.Module,
     data_loader: DataLoader,
-    criterion,
     device,
     create_classification_report=False,
 ):
@@ -26,7 +26,7 @@ def test(
 
             out = model(x_batch)
 
-            epoch_loss += criterion(out, y_batch)
+            epoch_loss += F.nll_loss(torch.log(out), y_batch)
 
             _, idxs = torch.max(out, 1)
 
@@ -37,7 +37,7 @@ def test(
     ground_truth = np.concatenate(ground_truth)
 
     print(
-        f"[Testing] Loss: {epoch_loss/len(data_loader):.6f}, Accuracy: {accuracy_score(ground_truth, predictions):.6f}"
+        f"[Testing] Loss: {epoch_loss/len(data_loader):.4f}, Accuracy: {accuracy_score(ground_truth, predictions):.4f}"
     )
 
     if create_classification_report:

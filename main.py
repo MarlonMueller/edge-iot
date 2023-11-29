@@ -108,30 +108,33 @@ if __name__ == "__main__":
 
     model = CustomModel(input_size, num_classes=num_species).to(device)
 
-    criterion = torch.nn.NLLLoss()
     optimizer = optim.Adam(model.parameters())
 
     num_epochs = 10
     for epoch in range(1, num_epochs + 1):
         create_classification_report = True if epoch == num_epochs else False
-        procedures.train(model, train_dataloader, optimizer, criterion, epoch, device)
+        procedures.train(model, train_dataloader, optimizer, epoch, device)
         procedures.test(
-            model, test_dataloader, criterion, device, create_classification_report
+            model, test_dataloader, device, create_classification_report
         )
 
     torch_dir = os.path.join(models_dir, "torch")
 
-    # utils.save_model(model, torch_dir, model_name)
+    utils.save_model(model, torch_dir, model_name)
+    
 
     ########################################################
     #  ONNX
     ########################################################
+
+    #model = utils.load_model(model, torch_dir, model_name)
+
     onnx_dir = os.path.join(models_dir, "onnx")
 
     utils.export_onnx(model, onnx_dir, model_name, input_size)
     utils.load_onnx(onnx_dir, model_name, check_graph=True)
 
-    optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
+    onnx_optimized_path = optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
 
     ########################################################
     #  QUANTIZATION
@@ -143,7 +146,7 @@ if __name__ == "__main__":
 
     cpp_dir = os.path.join(models_dir, "cpp")
 
-    target_chip = "esp32"
+    target_chip = "esp32s3"
     quantization_bit = "int8"
     granularity = "per-tensor"
     calib_method = "minmax"
@@ -174,12 +177,31 @@ if __name__ == "__main__":
     #  QUANTIZATION EVALUATION
     ########################################################
 
-    # eva = Evaluator(quantization_bit, granularity, target_chip)
-    # eva.set_providers([provider])
-    # eva.generate_quantized_model(model_proto, quantization_params_path)
+    evaluator = Evaluator(quantization_bit, granularity, target_chip)
+    evaluator.set_providers([provider])
+    evaluator.generate_quantized_model(model_proto, quantization_params_path)
+   
+    m = rt.InferenceSession(onnx_optimized_path, providers=[provider])
 
-    # output_names = [n.name for n in model_proto.graph.output]
-    # m = rt.InferenceSession(optimized_model_path, providers=[provider])
+    input_name = m.get_inputs()[0].name
+    output_names = [n.name for n in model_proto.graph.output]
 
-    # TODO -
-    # NOTE - Care about backup etc., optimizing network, interference, range test, optimize
+    correct = 0
+    correct_quantized = 0
+
+    for i in range(int(len(test_data)/batch_size)):
+
+        #TODO: Validate
+        
+        data = [test_data[j] for j in range(i * batch_size, (i+1) * batch_size)]
+        x = np.array([s[0].numpy() for s in data])
+        y = [s[1] for s in data]
+
+        [out, _] = evaluator.evalute_quantized_model(x, False)
+        correct_quantized += sum(np.argmax(out[0], axis=1) == y)
+
+        out = m.run(output_names, {input_name: x.astype(np.float32)})
+        correct += sum(np.argmax(out[0], axis=1) == y)
+
+    print(f"Accuracy of fp32 model: {correct / len(test_data):.4f}")
+    print(f"Accuracy of {quantization_bit} model: {correct_quantized / len(test_data):.4f}")

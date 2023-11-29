@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-
+import torch.nn.functional as F
 
 def train(
-    model: nn.Module, data_loader: DataLoader, optimizer, criterion, epoch, device
+    model: nn.Module, data_loader: DataLoader, optimizer, epoch, device
 ):
     model.train()
 
@@ -20,7 +20,7 @@ def train(
 
         out = model(x_batch)
 
-        loss = criterion(out, y_batch)
+        loss = F.nll_loss(torch.log(out), y_batch)
         loss.backward()
 
         epoch_loss += loss.item()
@@ -28,6 +28,6 @@ def train(
         optimizer.step()
 
     print(
-        f"[Training] Epoch: {epoch:3d}, Loss: {epoch_loss/len(data_loader):.6f}",
+        f"[Training] Epoch: {epoch:3d}, Loss: {epoch_loss/len(data_loader):.4f}",
         end=" - ",
     )
