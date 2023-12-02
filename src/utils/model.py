@@ -2,6 +2,7 @@ import os
 import torch
 import onnx
 from onnx import checker
+from jinja2 import Template
 
 
 def save_model(model, dir, model_name):
@@ -44,3 +45,16 @@ def load_onnx(dir, model_name, check_graph:bool = False):
     if check_graph:
         checker.check_graph(model_proto.graph)
     return model_proto
+
+
+def render_template(template_dir, template_name, tags, model_dir, model_name):
+    template_path = os.path.join(template_dir, f"{template_name}.jinja")
+    model_path = os.path.join(model_dir, f"{model_name}.hpp")
+    
+    with open(template_path, "r") as f:
+        template = f.read()
+        
+    template = Template(template).render(tags)
+    
+    with open(model_path, "w") as f :
+        f.write(template)

@@ -1,0 +1,64 @@
+#pragma once
+
+#include <stdint.h>
+
+#include "dl_layer_model.hpp"
+#include "dl_layer_conv2d.hpp"
+
+#include "coefficient.hpp"
+
+using namespace dl;
+using namespace layer;
+using namespace coefficient;
+
+class {{ model_name }} : public Model<{{ quantization_bit }}_t>
+{
+private:
+
+    {% for l in layers -%}
+        Conv2D<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+    {% endfor %}
+
+public:
+
+    {{ model_name }}() :
+    {% for l in layers -%}
+
+        {%- if loop.last %}
+        {% set delimiter = '{}' %}
+        {%- else %}
+        {% set delimiter = ',' %}
+        {%- endif -%}
+
+        {%if l['layer'] == "conv2d" -%}
+        {{ l['layer_name'] }}(Conv2D<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_conv_filter(), get__{{ l['layer_name'] }}_conv_bias(), get__{{ l['layer_name'] }}_conv_activation(), PADDING_SAME_END, {}, 1, 1, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% else %}
+
+        {% endif -%}
+
+    {% endfor %}
+
+    void build(Tensor<{{ quantization_bit }}_t>& input) {
+        
+        {% for l in layers -%}
+        {% if loop.first %}
+        this->{{ l['layer_name'] }}.build(input);
+        {% else %}
+        this->{{ l['layer_name'] }}.build(this->{{ l['previous_layer_name'] }}.get_output());
+        {% endif %}
+        {%-  endfor %}
+    }
+
+    void call(Tensor<{{ quantization_bit }}_t>& input) {
+        
+        {% for l in layers -%}
+        {% if loop.first %}
+        this->{{ l['layer_name'] }}.call(input);
+        this->.free_element();
+        {% else %}
+        this->{{ l['layer_name'] }}.call(this->{{ l['previous_layer_name'] }}.get_output());
+        this->{{ l['previous_layer_name'] }}.get_output().free_element();
+        {% endif %}
+        {%- endfor %}
+    }
+};
