@@ -3,7 +3,12 @@
 #include <stdint.h>
 
 #include "dl_layer_model.hpp"
+#include "dl_layer_relu.hpp"
 #include "dl_layer_conv2d.hpp"
+#include "dl_layer_softmax.hpp"
+#include "dl_layer_flatten.hpp"
+#include "dl_layer_max_pool2d.hpp"
+#include "dl_layer_fullyconnected.hpp"
 
 #include "coefficient.hpp"
 
@@ -16,7 +21,20 @@ class {{ model_name }} : public Model<{{ quantization_bit }}_t>
 private:
 
     {% for l in layers -%}
+        {%if l['layer'] == "conv2d" -%}
         Conv2D<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% elif l['layer'] == "reshape" %}
+        Reshape<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% elif l['layer'] == "maxpool2d" %}
+        MaxPool2D<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% elif l['layer'] == "softmax" %}
+        Softmax<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% elif l['layer'] == "fc" %}
+        FullyConnected<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% elif l['layer'] == "relu" %}
+        Relu<{{ quantization_bit }}_t> {{ l['layer_name'] }};
+        {% endif -%}
+
     {% endfor %}
 
 public:
@@ -31,9 +49,17 @@ public:
         {%- endif -%}
 
         {%if l['layer'] == "conv2d" -%}
-        {{ l['layer_name'] }}(Conv2D<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_conv_filter(), get__{{ l['layer_name'] }}_conv_bias(), get__{{ l['layer_name'] }}_conv_activation(), PADDING_SAME_END, {}, 1, 1, "{{ l['layer_name'] }}")){{ delimiter }}
-        {% else %}
-
+        {{ l['layer_name'] }}(Conv2D<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_conv_filter(), get__{{ l['layer_name'] }}_conv_bias(), get__{{ l['layer_name'] }}_conv_activation(), {{ l['padding_type'] }}, {{ l['padding'] }}, {{ stride_y }}, {{ stride_x }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% elif l['layer'] == "reshape" %}
+        {{ l['layer_name'] }}(Reshape<{{ quantization_bit }}_t>({{ shape }}, "{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
+        {% elif l['layer'] == "maxpool2d" %}
+        {{ l['layer_name'] }}(MaxPool2D<{{ quantization_bit }}_t>({{ filter_shape }}, {{ l['padding_type'] }}, {{ l['padding'] }}, {{ stride_y }}, {{ stride_x }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% elif l['layer'] == "softmax" %}
+        {{ l['layer_name'] }}(Softmax<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, "{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
+        {% elif l['layer'] == "fc" %}
+        {{ l['layer_name'] }}(FullyConnected<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_gemm_filter(), get__{{ l['layer_name'] }}_gemm_bias(), get__{{ l['layer_name'] }}_gemm_activation(), {{ l['flatten'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% elif l['layer'] == "relu" %}
+        {{ l['layer_name'] }}(Relu<{{ quantization_bit }}_t>("{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
         {% endif -%}
 
     {% endfor %}
