@@ -5,6 +5,7 @@ import os
 import torch
 import pathlib
 import asyncio
+import pickle
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from src.interface import xeno_canto, esc50
@@ -18,6 +19,9 @@ PATH = pathlib.Path(__file__).parent.resolve()
 
 
 if __name__ == "__main__":
+    
+    
+    
     ########################################################
     #  Generate Datasets
     ########################################################
@@ -108,19 +112,19 @@ if __name__ == "__main__":
 
     model = CustomModel(input_size, num_classes=num_species).to(device)
 
-    optimizer = optim.Adam(model.parameters())
+    # optimizer = optim.Adam(model.parameters())
 
-    num_epochs = 10
-    for epoch in range(1, num_epochs + 1):
-        create_classification_report = True if epoch == num_epochs else False
-        procedures.train(model, train_dataloader, optimizer, epoch, device)
-        procedures.test(
-            model, test_dataloader, device, create_classification_report
-        )
+    # num_epochs = 10
+    # for epoch in range(1, num_epochs + 1):
+    #     create_classification_report = True if epoch == num_epochs else False
+    #     procedures.train(model, train_dataloader, optimizer, epoch, device)
+    #     procedures.test(
+    #         model, test_dataloader, device, create_classification_report
+    #     )
 
-    torch_dir = os.path.join(models_dir, "torch")
+    # torch_dir = os.path.join(models_dir, "torch")
 
-    utils.save_model(model, torch_dir, model_name)
+    # utils.save_model(model, torch_dir, model_name)
     
 
     ########################################################
@@ -129,20 +133,20 @@ if __name__ == "__main__":
 
     #model = utils.load_model(model, torch_dir, model_name)
 
-    onnx_dir = os.path.join(models_dir, "onnx")
+    # onnx_dir = os.path.join(models_dir, "onnx")
 
-    utils.export_onnx(model, onnx_dir, model_name, input_size)
-    utils.load_onnx(onnx_dir, model_name, check_graph=True)
+    # utils.export_onnx(model, onnx_dir, model_name, input_size)
+    # utils.load_onnx(onnx_dir, model_name, check_graph=True)
 
-    onnx_optimized_path = optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
+    # onnx_optimized_path = optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
 
     ########################################################
     #  QUANTIZATION
     ########################################################
 
-    sys.path.append(os.path.join(PATH, "src", "procedures", "calibrate", "linux"))
-    from calibrator import *
-    from evaluator import *
+    # sys.path.append(os.path.join(PATH, "src", "procedures", "calibrate", "linux"))
+    # from calibrator import *
+    # from evaluator import *
 
     cpp_dir = os.path.join(models_dir, "cpp")
 
@@ -152,26 +156,50 @@ if __name__ == "__main__":
     calib_method = "minmax"
     provider = "CPUExecutionProvider"
 
-    calib_dataloader = DataLoader(test_data, batch_size=len(test_data))
-    calib_data = next(iter(calib_dataloader))[0].numpy()
-    model_proto = utils.load_onnx(onnx_dir, model_name)
+    # calib_dataloader = DataLoader(test_data, batch_size=len(test_data))
+    # calib_data = next(iter(calib_dataloader))[0].numpy()
+    # model_proto = utils.load_onnx(onnx_dir, model_name)
 
-    # Calibration dataset
-    calib = Calibrator(quantization_bit, granularity, calib_method)
-    calib.set_providers([provider])
+    # # Calibration dataset
+    # calib = Calibrator(quantization_bit, granularity, calib_method)
+    # calib.set_providers([provider])
 
     cpp_file_name = f"{model_name}_coefficient"
     quantization_params_path = os.path.join(
         cpp_dir, f"{model_name}_quantization_params.pickle"
     )
 
-    # Generate quantization table
-    calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
+    # # Generate quantization table
+    # calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
 
-    # Export model to cpp
-    calib.export_coefficient_to_cpp(
-        model_proto, quantization_params_path, target_chip, cpp_dir, cpp_file_name, True
-    )
+    # # Export model to cpp
+    # calib.export_coefficient_to_cpp(
+    #     model_proto, quantization_params_path, target_chip, cpp_dir, cpp_file_name, True
+    # )
+    
+    ########################################################
+    #  JINJA
+    ########################################################
+    
+    # Load the pickle file
+    with open(quantization_params_path, 'rb') as f:
+        data = pickle.load(f)
+    
+    output_exponents = [
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1
+    ]
+
+    tags = {
+        "model_name": model_name,
+        "quantization_bit": quantization_bit,
+        "layers": procedures.get_layer_info(model, output_exponents)
+    }
+    
+    
+    template_dir = os.path.join(PATH, "src", "templates")
+    utils.render_template(template_dir, "model", tags, cpp_dir, f"{model_name}_model")
+    
+    sys.exit(0)
 
     ########################################################
     #  QUANTIZATION EVALUATION
@@ -205,3 +233,4 @@ if __name__ == "__main__":
 
     print(f"Accuracy of fp32 model: {correct / len(test_data):.4f}")
     print(f"Accuracy of {quantization_bit} model: {correct_quantized / len(test_data):.4f}")
+    

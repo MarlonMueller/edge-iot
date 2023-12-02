@@ -14,4 +14,4 @@ COLORS = [
 from .counter import Counter
 from .config import load_config
 from .vis import plot_image, plot_wave, plot_mel
-from .model import save_model, load_model, export_onnx, load_onnx
+from .model import save_model, load_model, export_onnx, load_onnx, render_template
