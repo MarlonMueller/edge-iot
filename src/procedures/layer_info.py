@@ -12,10 +12,9 @@ import torch.nn as nn
 {"layer": "relu", "layer_name": "relu", "previous_layer_name": "fc", "inplace": "false"}, 
 """
 
-def get_layer_info(model, output_exponents):
+def get_layer_info(model, log_data):
 
     layers = []
-    output_exponent_iter = iter(output_exponents)
     
     def add_layer_info(layer_type, layer_name, previous_layer_name, **kwargs):
         layer_info = {"layer": layer_type, "layer_name": layer_name, "previous_layer_name": previous_layer_name}
@@ -23,22 +22,40 @@ def get_layer_info(model, output_exponents):
         layers.append(layer_info)
 
     previous_layer_name = ""
-    for layer_name, layer in model.named_children():
-        if isinstance(layer, nn.Conv2d):
-            output_exponent = next(output_exponent_iter, None)
+    for (layer_name, output_exponent) in log_data:
+
+        if "conv" in layer_name:
+            layer = getattr(model, layer_name)
             add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
-        elif isinstance(layer, nn.Linear):
-            output_exponent = next(output_exponent_iter, None)
+        elif "fc" in layer_name:
             add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true")
-        elif isinstance(layer, nn.ReLU):
+        elif "relu" in layer_name:
             add_layer_info("relu", layer_name, previous_layer_name, inplace="false")
-        elif isinstance(layer, nn.MaxPool2d):
+        elif "pool" in layer_name:
+            layer = getattr(model, layer_name)
             add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=list(layer.kernel_size), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
-        elif isinstance(layer, nn.Softmax):
-            output_exponent = next(output_exponent_iter, None)
+        elif "softmax" in layer_name:
             add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
-        elif isinstance(layer, nn.Flatten):
+        elif "flatten" in layer_name:
             add_layer_info("flatten", layer_name, previous_layer_name, inplace="false")
+
+        # for layer_name, layer in model.named_children():
+        # if isinstance(layer, nn.Conv2d):
+        #     output_exponent = next(output_exponent_iter, None)
+        #     add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
+        # elif isinstance(layer, nn.Linear):
+        #     output_exponent = next(output_exponent_iter, None)
+        #     add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true")
+        # elif isinstance(layer, nn.ReLU):
+        #     add_layer_info("relu", layer_name, previous_layer_name, inplace="false")
+        # elif isinstance(layer, nn.MaxPool2d):
+        #     add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=list(layer.kernel_size), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
+        # elif isinstance(layer, nn.Softmax):
+        #     output_exponent = next(output_exponent_iter, None)
+        #     add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
+        # elif isinstance(layer, nn.Flatten):
+        #     add_layer_info("flatten", layer_name, previous_layer_name, inplace="false")
+
         previous_layer_name = layer_name
         
     return layers
