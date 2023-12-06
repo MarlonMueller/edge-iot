@@ -1,5 +1,4 @@
-#ifndef AUX_PC_FFT
-#define AUX_PC_FFT
+#pragma once
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -19,23 +18,30 @@ uint8_t dsps_fft2r_mem_allocated = 0;
 
 uint16_t *dsps_fft2r_ram_rev_table = NULL;
 
-bool dsp_is_power_of_two(int x) {
+bool dsp_is_power_of_two(int x) 
+{
     return (x != 0) && ((x & (x - 1)) == 0);
 }
 
-int dsp_power_of_two(int x) {
-    for (size_t i = 0; i < 32; i++)
-    {
+int dsp_power_of_two(int x) 
+{
+    for (size_t i = 0; i < 32; i++) {
         x = x >> 1;
-        if(0 == x) return i;
+
+        if(0 == x) 
+            return i;
     }
+
     return 0;
 }
 
-esp_err_t dsps_fft2r_fc32_ansi_(float *data, int N, float *w) {
+esp_err_t dsps_fft2r_fc32_ansi_(float *data, int N, float *w) 
+{
+
     if (!dsp_is_power_of_two(N)) {
         return ESP_ERR_DSP_INVALID_LENGTH;
     }
+
     if (!dsps_fft2r_initialized) {
         return ESP_ERR_DSP_UNINITIALIZED;
     }
@@ -65,14 +71,17 @@ esp_err_t dsps_fft2r_fc32_ansi_(float *data, int N, float *w) {
         }
         ie <<= 1;
     }
+
     return result;
 }
 
-esp_err_t dsps_fft2r_fc32(float *data, int N) {
+esp_err_t dsps_fft2r_fc32(float *data, int N) 
+{
     return dsps_fft2r_fc32_ansi_(data, N, dsps_fft_w_table_fc32);
 }
 
-esp_err_t dsps_bit_rev_fc32_ansi(float *data, int N) {
+esp_err_t dsps_bit_rev_fc32_ansi(float *data, int N) 
+{
     if (!dsp_is_power_of_two(N)) {
         return ESP_ERR_DSP_INVALID_LENGTH;
     }
@@ -101,12 +110,14 @@ esp_err_t dsps_bit_rev_fc32_ansi(float *data, int N) {
     return result;
 }
 
-esp_err_t dsps_bit_rev_fc32(float *data, int N) {
+esp_err_t dsps_bit_rev_fc32(float *data, int N) 
+{
     return dsps_bit_rev_fc32_ansi(data, N);
 }
 
 
-esp_err_t dsps_gen_w_r2_fc32(float *w, int N) {
+esp_err_t dsps_gen_w_r2_fc32(float *w, int N) 
+{
     if (!dsp_is_power_of_two(N)) {
         return ESP_ERR_DSP_INVALID_LENGTH;
     }
@@ -124,17 +135,22 @@ esp_err_t dsps_gen_w_r2_fc32(float *w, int N) {
     return result;
 }
 
-esp_err_t dsps_fft2r_init_fc32(float *fft_table_buff, int table_size) {
+esp_err_t dsps_fft2r_init_fc32(float *fft_table_buff, int table_size) 
+{
     esp_err_t result = ESP_OK;
+
     if (dsps_fft2r_initialized != 0) {
         return result;
     }
+
     if (table_size > CONFIG_DSP_MAX_FFT_SIZE) {
         return ESP_ERR_DSP_PARAM_OUTOFRANGE;
     }
+
     if (table_size == 0) {
         return result;
     }
+
     if (fft_table_buff != NULL) {
         if (dsps_fft2r_mem_allocated) {
             return ESP_ERR_DSP_REINITIALIZED;
@@ -187,7 +203,8 @@ esp_err_t dsps_fft2r_init_fc32(float *fft_table_buff, int table_size) {
     return ESP_OK;
 }
 
-void dsps_fft2r_deinit_fc32() {
+void dsps_fft2r_deinit_fc32() 
+{
     if (dsps_fft2r_mem_allocated) {
         #if CONFIG_IDF_TARGET_ESP32S3
             if (dsps_fft_w_table_fc32 != dsps_fft2r_w_table_fc32_1024)
@@ -207,5 +224,3 @@ void dsps_fft2r_deinit_fc32() {
     dsps_fft2r_mem_allocated = 0;
     dsps_fft2r_initialized = 0;
 }
-
-#endif // AUX_PC_FFT

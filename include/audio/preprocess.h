@@ -5,8 +5,7 @@
  * @details This file contains functions for bird sounds preprocessing for ESP32. 
 */
 
-#ifndef DEEP_BIRD_AUDIO_PREPROCESS_H
-#define DEEP_BIRD_AUDIO_PREPROCESS_H
+#pragma once
 
 #ifndef RUN_PC
 #include "esp_err.h"
@@ -60,5 +59,3 @@ esp_err_t mfcc(const float *wav_values, size_t num_samples,
  * @return ESP_OK if success, otherwise undetermined.
 */
 esp_err_t free_mfcc_module();
-
-#endif // DEEP_BIRD_AUDIO_PREPROCESS_H
