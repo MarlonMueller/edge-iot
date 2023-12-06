@@ -8,12 +8,14 @@ models/torch/*
 !models/cpp/.gitkeep
 !models/onnx/.gitkeep
 !models/torch/.gitkeep
+
 *.h5
-data/annotations.csv
+
+data/*
+!data/audio
 data/audio/*
-data/img/*
 !data/audio/.gitkeep
-!data/img/.gitkeep
+
 
 venv/
 build/

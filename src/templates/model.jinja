@@ -16,7 +16,7 @@ using namespace dl;
 using namespace layer;
 using namespace {{ model_name }}_coefficient;
 
-class {{ model_name | capitalize }} : public Model<{{ quantization_bit }}_t>
+class {{ model_name | upper }} : public Model<{{ quantization_bit }}_t>
 {
 private:
 
@@ -58,7 +58,7 @@ public:
     {%- endif -%}
     {%- endfor %}
 
-    {{ model_name | capitalize }}() :
+    {{ model_name | upper }}() :
     {%- for l in layers -%}
 
         {%- if loop.last %}

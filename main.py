@@ -24,6 +24,22 @@ PATH = pathlib.Path(__file__).parent.resolve()
 if __name__ == "__main__":
     
     
+   
+    
+    
+    #CONFIG_APPTRACE_DEST_TRAX and CONFIG_APPTRACE_ENABLE with the ESP-IDF: SDK Configuration editor command.
+    # Data destination jtag
+    
+    # Open IDF Terminal
+    # Install tools 
+    #    cd ~/esp/esp-idf
+    #./install.sh esp32s3
+    # openocd -f board/esp32s3-builtin.cfg
+    # Start monitor and connect via USB (right)
+    # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/heap_debug.html#heap-tracing
+    # Use host free mode and configure menu
+    
+    
     
     ########################################################
     #  Generate Datasets
@@ -40,22 +56,30 @@ if __name__ == "__main__":
     annotation_path = os.path.join(data_dir, "annotations.csv")
 
     # Query xeno-canto
-    # page = xeno_canto.get_composite_page(query)
+    page = xeno_canto.get_composite_page(query)
     # xeno_canto.plot_distribution(page, threshold=1)
 
     # Filter to top k species
-    # page = xeno_canto.filter_top_k_species(page, k=num_species)
+    page = xeno_canto.filter_top_k_species(page, k=num_species)
     # xeno_canto.plot_distribution(page, threshold=0)
 
     # Download audio files
-    # species_map = asyncio.run(
-    #    xeno_canto.get_page_audio(page, audio_dir, annotation_path)
-    # )
+    species_map = asyncio.run(
+       xeno_canto.get_page_audio(page, audio_dir, annotation_path)
+    )
     # species_map["other_species"] = num_species
     # species_map["other_sound"] = num_species
+    
+    sys.exit(0)
+
+    #esc50.get_esc50_audio(data_dir)
+
+    old_audio_dir = os.path.join(data_dir, "ESC-50-master", "audio")
+    old_annotation_path = os.path.join(data_dir, "ESC-50-master", "meta", "esc50.csv")
+    esc50.generate(num_species, old_audio_dir, audio_dir, old_annotation_path, annotation_path)
 
     # Exit program
-    # sys.exit(0)
+    sys.exit(0)
 
     ########################################################
     #  Torch Dataset
@@ -80,7 +104,7 @@ if __name__ == "__main__":
     )
     input_size = train_data[0][0].size()
 
-    model_name = "bird"
+    model_name = "birdnet"
     models_dir = os.path.join(PATH, "models")
 
     # import librosa
@@ -151,7 +175,8 @@ if __name__ == "__main__":
     from calibrator import *
     from evaluator import *
 
-    cpp_dir = os.path.join(models_dir, "cpp")
+    #cpp_dir = os.path.join(models_dir, "cpp")
+    cpp_dir = os.path.join(PATH, "src", "model")
 
     target_chip = "esp32s3"
     quantization_bit = "int8"
