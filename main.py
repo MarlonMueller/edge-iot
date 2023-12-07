@@ -28,58 +28,58 @@ if __name__ == "__main__":
     DATASET SIZE: approx. 800 bird, 1400 non-bird
     BIRDS: water_rail, common_moorhen, s_warbler
 
-    Size of input: torch.Size([1, 32, 1723])
-    x.size(): torch.Size([1, 8, 17, 19])
-    Feature size: 2584
-    [Training] Epoch:   1, Loss: 1.0945 - [Testing] Loss: 1.0690, Accuracy: 0.6245
-    [Training] Epoch:   2, Loss: 1.0083 - [Testing] Loss: 1.0054, Accuracy: 0.6245
-    [Training] Epoch:   3, Loss: 0.9216 - [Testing] Loss: 0.9330, Accuracy: 0.6895
-    [Training] Epoch:   4, Loss: 0.8770 - [Testing] Loss: 0.8997, Accuracy: 0.6588
-    [Training] Epoch:   5, Loss: 0.8104 - [Testing] Loss: 0.7321, Accuracy: 0.6859
-    [Training] Epoch:   6, Loss: 0.7525 - [Testing] Loss: 0.7051, Accuracy: 0.6968
-    [Training] Epoch:   7, Loss: 0.6820 - [Testing] Loss: 0.6728, Accuracy: 0.7184
-    [Training] Epoch:   8, Loss: 0.6469 - [Testing] Loss: 0.6081, Accuracy: 0.7527
-    [Training] Epoch:   9, Loss: 0.6163 - [Testing] Loss: 0.5886, Accuracy: 0.7383
-    [Training] Epoch:  10, Loss: 0.6031 - [Testing] Loss: 0.5802, Accuracy: 0.7329
-    [Training] Epoch:  11, Loss: 0.5750 - [Testing] Loss: 0.5708, Accuracy: 0.7292
-    [Training] Epoch:  12, Loss: 0.5637 - [Testing] Loss: 0.5556, Accuracy: 0.7383
-    [Training] Epoch:  13, Loss: 0.5573 - [Testing] Loss: 0.5519, Accuracy: 0.7527
-    [Training] Epoch:  14, Loss: 0.5544 - [Testing] Loss: 0.5864, Accuracy: 0.7509
-    [Training] Epoch:  15, Loss: 0.5382 - [Testing] Loss: 0.5207, Accuracy: 0.7744
-    [Training] Epoch:  16, Loss: 0.5303 - [Testing] Loss: 0.5580, Accuracy: 0.7545
-    [Training] Epoch:  17, Loss: 0.5115 - [Testing] Loss: 0.5088, Accuracy: 0.7834
-    [Training] Epoch:  18, Loss: 0.5514 - [Testing] Loss: 0.5254, Accuracy: 0.7744
-    [Training] Epoch:  19, Loss: 0.4923 - [Testing] Loss: 0.4808, Accuracy: 0.8014
-    [Training] Epoch:  20, Loss: 0.4812 - [Testing] Loss: 0.5306, Accuracy: 0.7960
-                precision    recall  f1-score   support
+    return torch._C._cuda_getDeviceCount() > 0
+Size of input: torch.Size([1, 16, 173])
+x.size(): torch.Size([1, 8, 6, 5])
+Feature size: 240
+[Training] Epoch:   1, Loss: 1.1048 - [Testing] Loss: 1.0670, Accuracy: 0.6245
+[Training] Epoch:   2, Loss: 1.0075 - [Testing] Loss: 0.9495, Accuracy: 0.6245
+[Training] Epoch:   3, Loss: 0.9280 - [Testing] Loss: 0.9511, Accuracy: 0.6245
+[Training] Epoch:   4, Loss: 0.9026 - [Testing] Loss: 0.8626, Accuracy: 0.6245
+[Training] Epoch:   5, Loss: 0.8801 - [Testing] Loss: 0.8420, Accuracy: 0.6625
+[Training] Epoch:   6, Loss: 0.8750 - [Testing] Loss: 1.0168, Accuracy: 0.5686
+[Training] Epoch:   7, Loss: 0.8731 - [Testing] Loss: 0.8312, Accuracy: 0.6516
+[Training] Epoch:   8, Loss: 0.8440 - [Testing] Loss: 0.7887, Accuracy: 0.6841
+[Training] Epoch:   9, Loss: 0.8247 - [Testing] Loss: 0.7821, Accuracy: 0.6859
+[Training] Epoch:  10, Loss: 0.8117 - [Testing] Loss: 0.7553, Accuracy: 0.7058
+[Training] Epoch:  11, Loss: 0.7782 - [Testing] Loss: 0.7613, Accuracy: 0.6679
+[Training] Epoch:  12, Loss: 0.7628 - [Testing] Loss: 0.7152, Accuracy: 0.7365
+[Training] Epoch:  13, Loss: 0.7536 - [Testing] Loss: 0.7116, Accuracy: 0.7365
+[Training] Epoch:  14, Loss: 0.7313 - [Testing] Loss: 0.6948, Accuracy: 0.7473
+[Training] Epoch:  15, Loss: 0.7514 - [Testing] Loss: 0.6895, Accuracy: 0.7455
+[Training] Epoch:  16, Loss: 0.7086 - [Testing] Loss: 0.6784, Accuracy: 0.7527
+[Training] Epoch:  17, Loss: 0.6797 - [Testing] Loss: 0.6657, Accuracy: 0.7509
+[Training] Epoch:  18, Loss: 0.6825 - [Testing] Loss: 0.6567, Accuracy: 0.7708
+[Training] Epoch:  19, Loss: 0.6739 - [Testing] Loss: 0.6225, Accuracy: 0.7816
+[Training] Epoch:  20, Loss: 0.6784 - [Testing] Loss: 0.6766, Accuracy: 0.7671
+              precision    recall  f1-score   support
 
-            0       0.44      0.60      0.51        68
-            1       0.68      0.24      0.35        80
-            2       0.74      0.83      0.78        60
-            3       0.91      0.96      0.93       346
+           0       0.65      0.29      0.40        68
+           1       0.55      0.41      0.47        80
+           2       0.70      0.53      0.60        60
+           3       0.82      0.98      0.89       346
 
-        accuracy                           0.80       554
-    macro avg       0.69      0.66      0.64       554
-    weighted avg       0.80      0.80      0.78       554
-
-
-    Quantized model info:
-    model input name: input, exponent: -7
-    Conv layer name: /conv1/Conv, output_exponent: -6
-    MaxPool layer name: /pool1/MaxPool, output_exponent: -6
-    Conv layer name: /conv2/Conv, output_exponent: -6
-    MaxPool layer name: /pool2/MaxPool, output_exponent: -6
-    Conv layer name: /conv3/Conv, output_exponent: -7
-    MaxPool layer name: /pool3/MaxPool, output_exponent: -7
-    Flatten layer name: /Flatten, output_exponent: -7
-    Gemm layer name: /fc1/Gemm, output_exponent: -4
-    Gemm layer name: /fc2/Gemm, output_exponent: -3
-    Softmax layer name: /Softmax, output_exponent: -6
+    accuracy                           0.77       554
+   macro avg       0.68      0.56      0.59       554
+weighted avg       0.74      0.77      0.74       554
 
 
 
-    Accuracy of fp32 model: 0.7834
-    Accuracy of int8 model: 0.7870
+   Quantized model info:
+model input name: input, exponent: -7
+Conv layer name: /conv1/Conv, output_exponent: -7
+MaxPool layer name: /pool1/MaxPool, output_exponent: -7
+Conv layer name: /conv2/Conv, output_exponent: -7
+MaxPool layer name: /pool2/MaxPool, output_exponent: -7
+Flatten layer name: /Flatten, output_exponent: -7
+Gemm layer name: /fc1/Gemm, output_exponent: -5
+Gemm layer name: /fc2/Gemm, output_exponent: -4
+Softmax layer name: /Softmax, output_exponent: -6
+
+
+
+Accuracy of fp32 model: 0.7545
+Accuracy of int8 model: 0.7635
     """
     
     
