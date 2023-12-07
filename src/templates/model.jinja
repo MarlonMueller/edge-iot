@@ -68,13 +68,17 @@ public:
         {%- endif -%}
 
         {%if l['layer'] == "conv2d" -%}
+        {%if l['activation'] -%}
         {{ l['layer_name'] }}(Conv2D<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_conv_filter(), get__{{ l['layer_name'] }}_conv_bias(), get__{{ l['layer_name'] }}_conv_activation(), {{ l['padding_type'] }}, {{ l['padding'] }}, {{ l['stride_y'] }}, {{ l['stride_x'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {%- else %}
+        {{ l['layer_name'] }}(Conv2D<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_conv_filter(), get__{{ l['layer_name'] }}_conv_bias(), NULL, {{ l['padding_type'] }}, {{ l['padding'] }}, {{ l['stride_y'] }}, {{ l['stride_x'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% endif -%}
         {% elif l['layer'] == "flatten" -%}
         {{ l['layer_name'] }}(Flatten<{{ quantization_bit }}_t>("{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
         {% elif l['layer'] == "maxpool2d" -%}
         {{ l['layer_name'] }}(MaxPool2D<{{ quantization_bit }}_t>({{ l['filter_shape'] }}, {{ l['padding_type'] }}, {{ l['padding'] }}, {{ l['stride_y'] }}, {{ l['stride_x'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
         {% elif l['layer'] == "softmax" -%}
-        {{ l['layer_name'] }}(Softmax<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, "{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
+        {{ l['layer_name'] }}(Softmax<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
         {% elif l['layer'] == "fc" -%}
         {{ l['layer_name'] }}(FullyConnected<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_gemm_filter(), get__{{ l['layer_name'] }}_gemm_bias(), get__{{ l['layer_name'] }}_gemm_activation(), {{ l['flatten'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
         {% elif l['layer'] == "relu" -%}
@@ -99,7 +103,7 @@ public:
         {% for l in layers -%}
         {% if loop.first %}
         this->{{ l['layer_name'] }}.call(input);
-        this->.free_element();
+        input.free_element();
         {% else %}
         this->{{ l['layer_name'] }}.call(this->{{ l['previous_layer_name'] }}.get_output());
         this->{{ l['previous_layer_name'] }}.get_output().free_element();

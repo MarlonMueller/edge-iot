@@ -22,39 +22,22 @@ def get_layer_info(model, log_data):
         layers.append(layer_info)
 
     previous_layer_name = ""
-    for (layer_name, output_exponent) in log_data:
+    for i, (layer_name, output_exponent) in enumerate(log_data):
 
         if "conv" in layer_name:
             layer = getattr(model, layer_name)
             add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
         elif "fc" in layer_name:
-            add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true")
+            add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true", activation=(i != len(log_data) - 2))
         elif "relu" in layer_name:
             add_layer_info("relu", layer_name, previous_layer_name, inplace="false")
         elif "pool" in layer_name:
             layer = getattr(model, layer_name)
-            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=list(layer.kernel_size), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
+            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=str(set(list(layer.kernel_size))), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
         elif "softmax" in layer_name:
             add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
         elif "flatten" in layer_name:
             add_layer_info("flatten", layer_name, previous_layer_name, inplace="false")
-
-        # for layer_name, layer in model.named_children():
-        # if isinstance(layer, nn.Conv2d):
-        #     output_exponent = next(output_exponent_iter, None)
-        #     add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
-        # elif isinstance(layer, nn.Linear):
-        #     output_exponent = next(output_exponent_iter, None)
-        #     add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true")
-        # elif isinstance(layer, nn.ReLU):
-        #     add_layer_info("relu", layer_name, previous_layer_name, inplace="false")
-        # elif isinstance(layer, nn.MaxPool2d):
-        #     add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=list(layer.kernel_size), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
-        # elif isinstance(layer, nn.Softmax):
-        #     output_exponent = next(output_exponent_iter, None)
-        #     add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
-        # elif isinstance(layer, nn.Flatten):
-        #     add_layer_info("flatten", layer_name, previous_layer_name, inplace="false")
 
         previous_layer_name = layer_name
         
