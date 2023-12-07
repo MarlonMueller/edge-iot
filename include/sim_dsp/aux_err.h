@@ -1,5 +1,4 @@
-#ifndef AUX_PC_ERR
-#define AUX_PC_ERR
+#pragma once
 
 #include <stdio.h>
 
@@ -12,5 +11,3 @@ typedef int esp_err_t;
 #define ESP_ERR_NO_MEM 4
 #define ESP_ERR_DSP_REINITIALIZED 5
 #define ESP_ERR_INVALID_ARG 6
-
-#endif // AUX_PC_ERR

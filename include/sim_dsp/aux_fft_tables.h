@@ -1,5 +1,4 @@
-#ifndef AUX_PC_FFT_TABLE
-#define AUX_PC_FFT_TABLE
+#pragma once
 
 #include <stdint.h>
 
@@ -575,5 +574,3 @@ const uint16_t dsps_fft2r_rev_tables_fc32_size[] = {
     (const uint16_t)992, // bitrev2r_table_2048_fc32_size,
     (const uint16_t)2016,// bitrev2r_table_4096_fc32_size,
 };
-
-#endif
