@@ -23,7 +23,7 @@ void init_i2s_mic()
     // and soc/i2s_reg.h 
 
     const i2s_config_t micCfg = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_RX,
+        .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
         .sample_rate = I2S_SAMPLE_RATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,

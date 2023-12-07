@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "microphone.c" "preprocess.c"
+    SRCS "microphone.cpp" "preprocess.cpp"
     INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/include"
     PRIV_REQUIRES
         esp-dsp
