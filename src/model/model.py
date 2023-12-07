@@ -3,6 +3,9 @@ import torch.nn as nn
 from torchsummary import summary
 import torch.nn.functional as F
 
+"""
+((INPUT-KERNEL+2*PADDING)/STRIDE)+1
+"""
 
 class CustomModel(nn.Module):
     def __init__(self, input_size, num_classes):
@@ -12,15 +15,15 @@ class CustomModel(nn.Module):
         channels, height, width = input_size
 
         # Features (note: no support for nn.Sequential)
-        self.conv1 = nn.Conv2d(channels, 16, kernel_size=5, stride=2, padding=3)
+        self.conv1 = nn.Conv2d(channels, 16, kernel_size=3, stride=(1,2), padding=0) # 16,173 - 14, 86
         self.relu1 = nn.ReLU(inplace=False)
-        self.pool1 = nn.MaxPool2d((1, 3), stride=(1, 3))
-        self.conv2 = nn.Conv2d(16, 8, kernel_size=(3, 3), stride=1, padding=1)
+        self.pool1 = nn.MaxPool2d((1, 2), stride=(1, 2)) # 14, 43
+        self.conv2 = nn.Conv2d(16, 8, kernel_size=3, stride=(1,2), padding=0) # 12, 20
         self.relu2 = nn.ReLU(inplace=False)
-        self.pool2 = nn.MaxPool2d((1, 5), stride=(1, 5))
-        self.conv3 = nn.Conv2d(8, 8, kernel_size=3, stride=1, padding=1)
-        self.relu3 = nn.ReLU(inplace=False)
-        self.pool3 = nn.MaxPool2d((1, 3), stride=(1, 3))
+        self.pool2 = nn.MaxPool2d((2, 4), stride=(2, 4)) # 6, 5
+        # self.conv3 = nn.Conv2d(8, 8, kernel_size=3, stride=(2,3), padding=0) # 6,7
+        # self.relu3 = nn.ReLU(inplace=False)
+        #self.pool3 = nn.MaxPool2d((3, 3), stride=(3, 3)) # 11, 9
 
         # Classifier
         self.fc1 = nn.Linear(self._calculate_feature_size(channels, height, width), 128)
@@ -30,7 +33,8 @@ class CustomModel(nn.Module):
     def forward(self, x):
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
-        x = self.pool3(self.relu3(self.conv3(x)))
+        #x = self.pool3(self.relu3(self.conv3(x)))
+        #x = self.relu3(self.conv3(x))
         x = torch.flatten(x, 1)
         x = self.fc2(self.relu4(self.fc1(x)))
         output = F.softmax(x, -1)
@@ -43,7 +47,8 @@ class CustomModel(nn.Module):
         x = torch.rand(1, channels, height, width)
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
-        x = self.pool3(self.relu3(self.conv3(x)))
+        #x = self.pool3(self.relu3(self.conv3(x)))
+        #x = self.relu3(self.conv3(x))
         print(f"x.size(): {x.size()}")
         feature_size = x.view(1, -1).size(1)
         print(f"Feature size: {feature_size}")
