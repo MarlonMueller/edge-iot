@@ -26,7 +26,7 @@ def get_layer_info(model, log_data):
 
         if "conv" in layer_name:
             layer = getattr(model, layer_name)
-            add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
+            add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1], activation=True)
         elif "fc" in layer_name:
             add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true", activation=(i != len(log_data) - 2))
         elif "relu" in layer_name:

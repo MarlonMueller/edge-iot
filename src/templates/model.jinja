@@ -59,7 +59,7 @@ public:
     {%- endfor %}
 
     {{ model_name | upper }}() :
-    {%- for l in layers -%}
+    {%- for l in layers %}
 
         {%- if loop.last %}
         {% set delimiter = '{}' %}
@@ -80,7 +80,11 @@ public:
         {% elif l['layer'] == "softmax" -%}
         {{ l['layer_name'] }}(Softmax<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
         {% elif l['layer'] == "fc" -%}
+        {%if l['activation'] -%}
         {{ l['layer_name'] }}(FullyConnected<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_gemm_filter(), get__{{ l['layer_name'] }}_gemm_bias(), get__{{ l['layer_name'] }}_gemm_activation(), {{ l['flatten'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {%- else %}
+        {{ l['layer_name'] }}(FullyConnected<{{ quantization_bit }}_t>({{ l['output_exponent'] }}, get__{{ l['layer_name'] }}_gemm_filter(), get__{{ l['layer_name'] }}_gemm_bias(), NULL, {{ l['flatten'] }}, "{{ l['layer_name'] }}")){{ delimiter }}
+        {% endif -%}
         {% elif l['layer'] == "relu" -%}
         {{ l['layer_name'] }}(Relu<{{ quantization_bit }}_t>("{{ l['layer_name'] }}", {{ l['inplace'] }})){{ delimiter }}
         {% endif -%}
