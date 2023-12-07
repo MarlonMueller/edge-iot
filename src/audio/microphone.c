@@ -14,6 +14,7 @@
 #define I2S_SAMPLE_RATE (16000)
 #define I2S_READ_LEN (16 * 1024)
 
+#define IGNORE_FIRST_N_VALUES 2
 
 void init_i2s_mic() 
 {
@@ -22,12 +23,10 @@ void init_i2s_mic()
     // and soc/i2s_reg.h 
 
     const i2s_config_t micCfg = {
-        // .mode = i2s_mode_t(I2S_MODE_MASTER | I2S_MODE_RX),
         .mode = I2S_MODE_MASTER | I2S_MODE_RX,
         .sample_rate = I2S_SAMPLE_RATE,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-        // .communication_format = i2s_comm_format_t(I2S_COMM_FORMAT_STAND_I2S),
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
         .dma_buf_count = 64,
@@ -60,10 +59,13 @@ void record_i2s_mic(float *buffer, int num_values)
     char *i2s_read_buff = (char *)calloc(I2S_READ_LEN, sizeof(char));
     size_t bytes_read = 0;
 
-    // First 2 read values are discarded. Noise ?? 
+    // Ignore first instants
 
-    i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
-    i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
+    for (int i=0; i<IGNORE_FIRST_N_VALUES; ++i) {
+        i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
+    }
+
+    // Read values
     
     while (pos < num_values) {
         i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
