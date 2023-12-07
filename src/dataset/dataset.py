@@ -1,5 +1,6 @@
 import os
 import h5py
+import torch
 import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
@@ -53,11 +54,15 @@ class BirdDataset(Dataset):
         with h5py.File(self.hp5y_path, "r") as f:
             data = f["data"][idx, :, :]
 
+        data_min, data_max = data.min(), data.max()
+        data = (data - data_min) / (data_max - data_min)
+
         label = self.labels.iloc[idx, 1]
 
         if self.transform:
             data = self.transform(data)
 
+        #print(torch.max(data), torch.min(data), torch.mean(data), torch.std(data))
         # FIXME - uniform mfcc length
 
         return data, label
