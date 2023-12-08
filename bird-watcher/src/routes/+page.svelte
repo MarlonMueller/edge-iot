@@ -1,6 +1,7 @@
 <script>
 	import { onMount } from "svelte";
 	import { fade } from 'svelte/transition';
+	import CaliforniaCondor from '$lib/California_Condor.jpg'
 
 	$: birds=[]
 
@@ -24,12 +25,14 @@
 </script>
 <div class="container mx-auto flex justify-center">
 	<div class="space-y-10">
-		<h1 class="h1 text-center">Bird Watcher</h1>
+		<h1 class="mt-3 h1 text-center">Bird Watcher</h1>
 		<div class="flex flex-col-reverse">
 			{#each birds as bird}
 			<div class="mt-10 card p-4" transition:fade={{  duration: 300 }}>
 
 				<h3 class='text-center mb-3'>{bird.name}</h3>
+				<img src={CaliforniaCondor} alt="bird" style="width: 300px;">
+				<h5 class='mt-3 text-center'> Detected at:</h5>
 				<h5 class='text-center'> {bird.long},{bird.lat}</h5>
 			</div>
 			{/each}
