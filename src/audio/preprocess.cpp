@@ -9,6 +9,7 @@
 
 #include <math.h>
 
+
 #ifndef RUN_PC
 
 #include "esp_log.h"
@@ -46,11 +47,11 @@ static const char *PREPROCESS_TAG = "PREPROCESS";
 #define FMIN 0
 #define FMAX (SAMPLE_RATE / 2) // Nyquist (default by Librosa)
 
-#define HOP_LENGTH_SAMPLES 90
+#define HOP_LENGTH_SAMPLES 256
 #define WIN_LENGTH_SAMPLES 512     // for ESP-IDF implementation, 
 #define NUM_FFT WIN_LENGTH_SAMPLES // must be Power of 2 because of FFT
 
-#define N_MELS 32
+#define N_MELS 16
 
 #define HZ_TO_MEL(frequency) (2595.0 * log10(1.0 + (frequency) / 700.0))
 #define MEL_TO_HZ(mels) (700.0 * (pow(10.0, (mels) / 2595.0) - 1.0))
@@ -179,8 +180,8 @@ esp_err_t malloc_mfcc_module()
 }
 
 
-esp_err_t mfcc(const float *wav_values, size_t num_samples, 
-               float ***output, size_t *output_frames) 
+esp_err_t mfcc(const int8_t *wav_values, size_t num_samples, 
+               int8_t ***output, size_t *output_frames) 
 {
 
     esp_err_t ret = ESP_OK;
@@ -199,7 +200,7 @@ esp_err_t mfcc(const float *wav_values, size_t num_samples,
         return ret;
     }
     
-    *output = (float **)malloc(num_frames * sizeof(float *));
+    *output = (int8_t **)malloc(num_frames * sizeof(int8_t *));
 
     if (*output == NULL) {
         ESP_LOGE(PREPROCESS_TAG, "Error output allocation");
@@ -208,7 +209,7 @@ esp_err_t mfcc(const float *wav_values, size_t num_samples,
     }
     
     for (size_t i = 0; i<num_frames; ++i) {
-        (*output)[i] = (float *)malloc(N_MELS * sizeof(float));
+        (*output)[i] = (int8_t *)malloc(N_MELS * sizeof(int8_t));
 
         if ((*output)[i] == NULL) {
             ESP_LOGE(PREPROCESS_TAG, "Error output[%d] allocation", i);

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 // PIN LAYOUT: 
 // The following pins are used. Remember to also connect the power supply and
 // ground pins. 5 pins are used in total. 
@@ -28,7 +30,7 @@ void init_i2s_mic();
  * 
  * @pre buffer is allocated with the number of elements indicated by num_values. 
 */
-void record_i2s_mic(float *buffer, int num_values);
+void record_i2s_mic(int8_t *buffer, int num_values);
 
 /**
  * @brief Deinitialize I2S transmission for microphone. 

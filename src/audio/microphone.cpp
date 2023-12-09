@@ -53,7 +53,7 @@ void init_i2s_mic()
     i2s_set_pin(I2S_PORT, &micPins);
 }
 
-void record_i2s_mic(float *buffer, int num_values) 
+void record_i2s_mic(int8_t *buffer, int num_values) 
 {
     int pos = 0;
     char *i2s_read_buff = (char *)calloc(I2S_READ_LEN, sizeof(char));
