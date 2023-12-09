@@ -23,4 +23,6 @@ build/
 # automatic dependences created by ESP32 IDF framework
 managed_components/
 
+dependencies.lock
+
 .DS_Store
