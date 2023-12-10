@@ -96,8 +96,10 @@ Accuracy of int8 model: 0.7635
     # openocd -f board/esp32s3-builtin.cfg
     # Start monitor and connect via USB (right)
     # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/heap_debug.html#heap-tracing
-    # Use host free mode and configure menu
-    
+    # Use host free mode and configure menu#
+    # Enable PSRAM malloc
+    # Panic behaviour
+    # DL Fix
     
     
     ########################################################

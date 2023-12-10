@@ -97,7 +97,7 @@ public:
         {% if loop.first %}
         this->{{ l['layer_name'] }}.build(input);
         {% else %}
-        this->{{ l['layer_name'] }}.build(this->{{ l['previous_layer_name'] }}.get_output());
+        this->{{ l['layer_name'] }}.build(this->{{ l['previous_layer_name'] }}.get_output(), true);
         {% endif %}
         {%-  endfor %}
     }

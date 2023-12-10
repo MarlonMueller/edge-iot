@@ -25,19 +25,21 @@ static int input_exponent = -7;
 
 void task_tx(void *pvParameters)
 {
-	ESP_LOGI(pcTaskGetName(NULL), "Start");
-	uint8_t buf[256]; // Maximum Payload size of SX1276/77/78/79 is 255
-	while(1) {
-		TickType_t nowTick = xTaskGetTickCount();
-		int send_len = sprintf((char *)buf,"Hello World!! %"PRIu32, nowTick);
-		lora_send_packet(buf, send_len);
-		ESP_LOGI(pcTaskGetName(NULL), "%d byte packet sent...", send_len);
-		int lost = lora_packet_lost();
-		if (lost != 0) {
-			ESP_LOGW(pcTaskGetName(NULL), "%d packets lost", lost);
-		}
-		vTaskDelay(pdMS_TO_TICKS(5000));
-	} // end while
+    ESP_LOGI(pcTaskGetName(NULL), "Start");
+    uint8_t buf[256]; // Maximum Payload size of SX1276/77/78/79 is 255
+    while (1)
+    {
+        TickType_t nowTick = xTaskGetTickCount();
+        int send_len = sprintf((char *)buf, "Hello World!! %" PRIu32, nowTick);
+        lora_send_packet(buf, send_len);
+        ESP_LOGI(pcTaskGetName(NULL), "%d byte packet sent...", send_len);
+        int lost = lora_packet_lost();
+        if (lost != 0)
+        {
+            ESP_LOGW(pcTaskGetName(NULL), "%d packets lost", lost);
+        }
+        vTaskDelay(pdMS_TO_TICKS(5000));
+    } // end while
 }
 
 extern "C" void app_main()
@@ -46,68 +48,70 @@ extern "C" void app_main()
     /**********
     LORA Module
     ************/
-
+/* 
     ESP_LOGI(MAIN_TAG, "Starting application");
-	if (lora_init() == 0) {
-		ESP_LOGE(pcTaskGetName(NULL), "Does not recognize the module");
-		while(1) {
-			vTaskDelay(1);
-		}
-	}
+    if (lora_init() == 0)
+    {
+        ESP_LOGE(pcTaskGetName(NULL), "Does not recognize the module");
+        while (1)
+        {
+            vTaskDelay(1);
+        }
+    }
 
 #if CONFIG_169MHZ
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is 169MHz");
-	lora_set_frequency(169e6); // 169MHz
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is 169MHz");
+    lora_set_frequency(169e6); // 169MHz
 #elif CONFIG_433MHZ
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is 433MHz");
-	lora_set_frequency(433e6); // 433MHz
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is 433MHz");
+    lora_set_frequency(433e6); // 433MHz
 #elif CONFIG_470MHZ
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is 470MHz");
-	lora_set_frequency(470e6); // 470MHz
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is 470MHz");
+    lora_set_frequency(470e6); // 470MHz
 #elif CONFIG_866MHZ
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is 866MHz");
-	lora_set_frequency(866e6); // 866MHz
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is 866MHz");
+    lora_set_frequency(866e6); // 866MHz
 #elif CONFIG_915MHZ
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is 915MHz");
-	lora_set_frequency(915e6); // 915MHz
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is 915MHz");
+    lora_set_frequency(915e6); // 915MHz
 #elif CONFIG_OTHER
-	ESP_LOGI(pcTaskGetName(NULL), "Frequency is %dMHz", CONFIG_OTHER_FREQUENCY);
-	long frequency = CONFIG_OTHER_FREQUENCY * 1000000;
-	lora_set_frequency(frequency);
+    ESP_LOGI(pcTaskGetName(NULL), "Frequency is %dMHz", CONFIG_OTHER_FREQUENCY);
+    long frequency = CONFIG_OTHER_FREQUENCY * 1000000;
+    lora_set_frequency(frequency);
 #endif
 
-	lora_enable_crc();
+    lora_enable_crc();
 
-	int cr = 1;
-	int bw = 7;
-	int sf = 7;
+    int cr = 1;
+    int bw = 7;
+    int sf = 7;
 #if CONFIF_ADVANCED
-	cr = CONFIG_CODING_RATE
-	bw = CONFIG_BANDWIDTH;
-	sf = CONFIG_SF_RATE;
+    cr = CONFIG_CODING_RATE
+        bw = CONFIG_BANDWIDTH;
+    sf = CONFIG_SF_RATE;
 #endif
 
-	lora_set_coding_rate(cr);
-	//lora_set_coding_rate(CONFIG_CODING_RATE);
-	//cr = lora_get_coding_rate();
-	ESP_LOGI(pcTaskGetName(NULL), "coding_rate=%d", cr);
+    lora_set_coding_rate(cr);
+    // lora_set_coding_rate(CONFIG_CODING_RATE);
+    // cr = lora_get_coding_rate();
+    ESP_LOGI(pcTaskGetName(NULL), "coding_rate=%d", cr);
 
-	lora_set_bandwidth(bw);
-	//lora_set_bandwidth(CONFIG_BANDWIDTH);
-	//int bw = lora_get_bandwidth();
-	ESP_LOGI(pcTaskGetName(NULL), "bandwidth=%d", bw);
+    lora_set_bandwidth(bw);
+    // lora_set_bandwidth(CONFIG_BANDWIDTH);
+    // int bw = lora_get_bandwidth();
+    ESP_LOGI(pcTaskGetName(NULL), "bandwidth=%d", bw);
 
-	lora_set_spreading_factor(sf);
-	//lora_set_spreading_factor(CONFIG_SF_RATE);
-	//int sf = lora_get_spreading_factor();
-	ESP_LOGI(pcTaskGetName(NULL), "spreading_factor=%d", sf);
+    lora_set_spreading_factor(sf);
+    // lora_set_spreading_factor(CONFIG_SF_RATE);
+    // int sf = lora_get_spreading_factor();
+    ESP_LOGI(pcTaskGetName(NULL), "spreading_factor=%d", sf);
 
 #if CONFIG_SENDER
-	xTaskCreate(&task_tx, "TX", 1024*3, NULL, 5, NULL);
+    xTaskCreate(&task_tx, "TX", 1024 * 3, NULL, 5, NULL);
 #endif
 #if CONFIG_RECEIVER
-	xTaskCreate(&task_rx, "RX", 1024*3, NULL, 5, NULL);
-#endif
+    xTaskCreate(&task_rx, "RX", 1024 * 3, NULL, 5, NULL);
+#endif */
 
     /**********
     MICROPHONE
@@ -117,7 +121,7 @@ extern "C" void app_main()
 
     // for (int i = 0; i < TEST_WAV_SIZE; i++)
     // {
-    //     ESP_LOGI(MAIN_TAG, "Value %f", s_audio[i]);
+    //     ESP_LOGI(MAIN_TAG, "Value %d", s_audio[i]);
     // }
 
     deinit_i2s_mic();
@@ -167,11 +171,14 @@ extern "C" void app_main()
 
     // Normalize and clip values
 
-    if (max_value != min_value) {
+    if (max_value != min_value)
+    {
         int pos = 0;
 
-        for (size_t i = 0; i < num_frames && pos < total_elements; ++i) {
-            for (size_t j = 0; j < num_mfcc && pos < total_elements; ++j) {
+        for (size_t i = 0; i < num_frames && pos < total_elements; ++i)
+        {
+            for (size_t j = 0; j < num_mfcc && pos < total_elements; ++j)
+            {
                 float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
                 // ESP_LOGI(MAIN_TAG, "Normalized input: %f", normalized_input);
                 // model_input[pos] = 0.0; // (int8_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
@@ -183,7 +190,7 @@ extern "C" void app_main()
     // for (int i=0; i<total_elements; ++i) {
     //     ESP_LOGI(MAIN_TAG, "Model input %d:", (int) model_input[i]);
     // }
-    
+
     Tensor<int8_t> input;
     int num_frames_int = static_cast<int>(num_frames); // TODO: remove this cast
     input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_mfcc, num_frames_int, 1}).set_auto_free(false);
@@ -191,11 +198,38 @@ extern "C" void app_main()
     BIRDNET model;
     model.forward(input);
 
+    // ESP-DL softmax implementation fix: this->channel = input.shape[0];
     float *probs = model.softmax.get_output().get_element_ptr();
 
-    for (int i = 0; i < 4; ++i)
+    float max_prob = probs[0];
+    int max_index = 0;
+
+    for (size_t i = 1; i < 4; i++)
     {
         ESP_LOGI(MAIN_TAG, "Prob %d: %f", i, probs[i]);
+        if (probs[i] > max_prob)
+        {
+            max_prob = probs[i];
+            max_index = i;
+        }
+    }
+
+    switch (max_index)
+    {
+    case 0:
+        ESP_LOGI(MAIN_TAG, "CLASS 0");
+        break;
+    case 1:
+        ESP_LOGI(MAIN_TAG, "CLASS 1");
+        break;
+    case 2:
+        ESP_LOGI(MAIN_TAG, "CLASS 2");
+        break;
+    case 3:
+        ESP_LOGI(MAIN_TAG, "CLASS 3");
+        break;
+    default:
+        ESP_LOGE(MAIN_TAG, "");
     }
 
     model.softmax.get_output().free_element();
