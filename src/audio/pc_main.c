@@ -1,15 +1,17 @@
 /**
- * gcc -g -D RUN_PC -I include/ src/audio/pc_main.c src/audio/preprocess.c -o build/pc_test
+ * g++ -g -D RUN_PC -I include/ src/audio/pc_main.c src/audio/preprocess.cpp -o build/pc_test
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "audio/preprocess.h"
 
-#define TEST_WAV_SIZE 1000
 
-static float audio[TEST_WAV_SIZE];
+#define TEST_WAV_SIZE 44800
+
+static int8_t audio[TEST_WAV_SIZE];
 
 int main() {
     printf("Starting application");

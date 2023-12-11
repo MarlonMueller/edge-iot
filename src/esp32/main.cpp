@@ -130,14 +130,28 @@ extern "C" void app_main()
     MFCC
     ************/
 
+    for (size_t i=0; i<TEST_WAV_SIZE; ++i) {
+       s_audio[i] = 1.0;
+    }
+
     int num_mfcc = 16;
 
-    int8_t **mfcc_output;
+    float **mfcc_output;
     size_t num_frames = 0;
 
     malloc_mfcc_module();
     mfcc(s_audio, TEST_WAV_SIZE, &mfcc_output, &num_frames);
     free_mfcc_module();
+
+    // Print values
+
+    for (int i = 0; i < 5; ++i)
+    {
+        for (int j = 0; j < 5; ++j)
+        {
+            ESP_LOGI(MAIN_TAG, "MFCC output %d %d: %f", i, j, mfcc_output[i][j]);
+        }
+    }
 
     size_t total_elements = num_frames * num_mfcc;
     ESP_LOGI(MAIN_TAG, "MFCC num frames: %d", num_frames);
@@ -167,7 +181,7 @@ extern "C" void app_main()
             max_value = std::max(max_value, value);
         }
     }
-    // ESP_LOGI(MAIN_TAG, "Min value: %f - Max value: %f", min_value, max_value);
+    ESP_LOGI(MAIN_TAG, "Min value: %f - Max value: %f", min_value, max_value);
 
     // Normalize and clip values
 

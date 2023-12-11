@@ -181,7 +181,7 @@ esp_err_t malloc_mfcc_module()
 
 
 esp_err_t mfcc(const int8_t *wav_values, size_t num_samples, 
-               int8_t ***output, size_t *output_frames) 
+               float ***output, size_t *output_frames) 
 {
 
     esp_err_t ret = ESP_OK;
@@ -200,7 +200,7 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
         return ret;
     }
     
-    *output = (int8_t **)malloc(num_frames * sizeof(int8_t *));
+    *output = (float **)malloc(num_frames * sizeof(float *));
 
     if (*output == NULL) {
         ESP_LOGE(PREPROCESS_TAG, "Error output allocation");
@@ -209,7 +209,7 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
     }
     
     for (size_t i = 0; i<num_frames; ++i) {
-        (*output)[i] = (int8_t *)malloc(N_MELS * sizeof(int8_t));
+        (*output)[i] = (float *)malloc(N_MELS * sizeof(float));
 
         if ((*output)[i] == NULL) {
             ESP_LOGE(PREPROCESS_TAG, "Error output[%d] allocation", i);

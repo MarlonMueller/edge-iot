@@ -10,18 +10,9 @@
 #ifndef RUN_PC
 #include "esp_err.h"
 #else
+#include <stdint.h>
 #include "sim_dsp/aux_err.h"
 #endif
-/*
- * @brief Read Short-time Fourier transform from file. 
- * 
- * @param wav_values [in] Input audio signal.
- * @param sample_rate [in] Sample rate of the input audio signal.
- * @param output [out] Output Short-time Fourier transform.
- * 
- * @pre output must be allocated before calling this function.
-*/
-// esp_err_t stft(const float *wav_values, int sample_rate, float **output);
 
 /**
  * @brief Initialization of MFCC preprocessing module. Memory sizes allocated.
@@ -50,7 +41,7 @@ esp_err_t malloc_mfcc_module();
  * @return Error values according to ESP-IDF coding style.
 */
 esp_err_t mfcc(const int8_t *wav_values, size_t num_samples, 
-               int8_t ***output, size_t *output_frames);
+               float ***output, size_t *output_frames);
 
 
 /**
