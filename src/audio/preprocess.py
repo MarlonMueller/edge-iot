@@ -7,70 +7,51 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
-import argparse
-import scipy
+import ctypes # for C library usage
 
-# CONSTANTS. Need to be adjusted for our application.
-N_FFT = 512
-HOP_LENGTH = 256
-N_MELS = 16
 
 # Functions
 
+def mfcc(wav: int):
 
-def mfcc_from_file(file: str, plot: bool = False, sr: int = 22050) -> np.ndarray:
-    """
-    Compute the MFCC of an audio file.
+    # Calculate data from C library
 
-    Args:
-        file (str): Path to the audio file.
-        plot (bool): Whether to plot the MFCC.
-        sr (int): Resampling rate of the audio file.
+    lib = ctypes.CDLL('./src/audio/preprocess.so') 
 
-    Returns:
-        mfcc (numpy.ndarray): MFCC of the audio file.
-    """
+    lib.mfcc.argtypes = [ctypes.POINTER(ctypes.c_int8), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))), ctypes.POINTER(ctypes.c_size_t)]
+    lib.mfcc.restype = ctypes.c_int
 
-    # Load the audio file
+    wav_values = np.array(wav, dtype=np.int8)
+    wav_values_ptr = ctypes.cast(wav_values.ctypes.data, ctypes.POINTER(ctypes.c_int8))
 
-    # TODO - proper audio slicing
-    y, _ = librosa.load(file, sr=sr, duration=2.0)
+    output_frames = ctypes.c_size_t()
+    output = ctypes.POINTER(ctypes.POINTER(ctypes.c_float))()
 
-    # Compute the MFCC
-    mfcc = librosa.feature.mfcc(
-        y=y,
-        sr=sr,
-        n_fft=N_FFT,
-        hop_length=HOP_LENGTH,
-        win_length=N_FFT,
-        n_mfcc=N_MELS,
-        htk=True,
-        window=scipy.signal.windows.hann,
-    )
+    lib.malloc_mfcc_module()
+    lib.mfcc(wav_values_ptr, len(wav_values), ctypes.byref(output), ctypes.byref(output_frames))
+    lib.free_mfcc_module()
 
-    # Plot
+    num_mfcc = int(lib.get_num_mfcc())
 
-    if plot:
-        plt.figure(figsize=(10, 4))
+    # Convert data to numpy array
 
-        librosa.display.specshow(mfcc)
+    mfcc = np.zeros((output_frames.value, num_mfcc))
 
-        plt.colorbar()
-        plt.title("MFCC")
-        plt.tight_layout()
-
-        plt.show()
+    for i in range(output_frames.value):
+        for j in range(num_mfcc):
+            mfcc[i][j] = output[i][j]
 
     return mfcc
 
-
 if __name__ == "__main__":
-    # Arguments parse
+    output = mfcc([1 for i in range(16000)])
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--file", type=str, help="Path to the audio file.", required=True
-    )
-    args = parser.parse_args()
+    plt.figure(figsize=(10, 4))
 
-    mfcc = mfcc_from_file(args.file, plot=True)
+    librosa.display.specshow(output)
+
+    plt.colorbar()
+    plt.title("MFCC")
+    plt.tight_layout()
+
+    plt.show()

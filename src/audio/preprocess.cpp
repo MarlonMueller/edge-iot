@@ -4,6 +4,12 @@
  * 
  * This file contains the implementation of the audio preprocessing functions.
  * For PC compilation, RUN_PC directive must be defined.
+ * 
+ * In order to run this code for Python, compile to obtain the .so file with
+ * the following command:
+ * 
+ * gcc -x c -o src/audio/preprocess.so -D RUN_PC -shared -fPIC -I include/ src/audio/preprocess.cpp -lm
+ * 
 */
 #include "audio/preprocess.h"
 
@@ -81,6 +87,11 @@ static float *s_mel_buffer;
 
 
 // Auxiliary functions
+
+size_t get_num_mfcc() 
+{
+    return N_MELS;
+}
 
 size_t get_num_frames(size_t num_samples) 
 {
