@@ -1,7 +1,6 @@
 .vscode/
 
 *.pyc 
-src/esp-dl/*
 
 #models/cpp/*
 models/onnx/*
