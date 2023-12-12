@@ -61,6 +61,6 @@ void lora_dump_registers(void);
 
 void setup_lora_comm();
 void task_rx(void *pvParameters);
-void task_tx(void *pvParameters);
+void task_tx(uint8_t *buf, int size);
 
 }

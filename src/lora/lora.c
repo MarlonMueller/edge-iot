@@ -847,24 +847,15 @@ void task_rx(void *pvParameters)
 }
 
 
-void task_tx(void *pvParameters)
+void task_tx(uint8_t *buf, int size)
 {
-    ESP_LOGI(pcTaskGetName(NULL), "Start");
-    uint8_t buf[256]; // Maximum Payload size of SX1276/77/78/79 is 255
-    while (1) {
-        TickType_t nowTick = xTaskGetTickCount();
-        int send_len = sprintf((char *)buf, "Hello World!! %" PRIu32, nowTick);
+   ESP_LOGI(TAG, "Start");
+   lora_send_packet(buf, size);
+   ESP_LOGI(TAG, "%d Bytes packets sent...", size);
 
-        lora_send_packet(buf, send_len);
+   int lost = lora_packet_lost();
 
-        ESP_LOGI(pcTaskGetName(NULL), "%d byte packet sent...", send_len);
-
-        int lost = lora_packet_lost();
-
-        if (lost != 0){
-            ESP_LOGW(pcTaskGetName(NULL), "%d packets lost", lost);
-        }
-
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    } // end while
+   if (lost != 0) {
+      ESP_LOGW(TAG, "%d packets lost", lost);
+   }
 }

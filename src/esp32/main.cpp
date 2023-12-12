@@ -18,8 +18,10 @@
 
 // Entry point for ESP32 application
 #define TEST_WAV_SIZE 44800
+#define MAX_TX_SIZE 255 // bytes. Max size of a LoRa packet
 
 static int8_t s_audio[TEST_WAV_SIZE];
+static uint8_t s_tx_data[MAX_TX_SIZE];
 
 static int input_exponent = -7;
 
@@ -33,13 +35,11 @@ extern "C" void app_main()
 
     setup_lora_comm();
 
-#if CONFIG_SENDER
-    xTaskCreate(&task_tx, "TX", 1024 * 3, NULL, 5, NULL);
-#endif
+    for (int i = 0; i < MAX_TX_SIZE; ++i) {
+        s_tx_data[i] = 0;
+    }
 
-#if CONFIG_RECEIVER
-    xTaskCreate(&task_rx, "RX", 1024 * 3, NULL, 5, NULL);
-#endif 
+    task_tx(s_tx_data, MAX_TX_SIZE);
 
     /**********
     MICROPHONE
