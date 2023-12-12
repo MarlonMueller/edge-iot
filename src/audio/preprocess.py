@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 
 # preprocess.py
+# 
 # Description: Preprocess audio files
 # This file provides the functions for preprocessing audio files.
+# 
+# IMPORTANT: 
+# In order to use this project in this file, compile the C library with
+# the following command:
+#   gcc -x c -o src/audio/preprocess.so -D RUN_PC -shared -fPIC -I include/ src/audio/preprocess.cpp -lm
 
 import numpy as np
 import matplotlib.pyplot as plt
