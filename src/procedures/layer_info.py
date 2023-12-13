@@ -73,7 +73,11 @@ def get_layer_info(model, log_data):
                 padding_type = "PADDING_NOT_SET"
                 padding_vec = f"{{{padding_height},{padding_height},{padding_width},{padding_width}}}"
 
-            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=str(set(list(layer.kernel_size))), padding_type=padding_type, padding=padding_vec, stride_y=layer.stride[0], stride_x=layer.stride[1])
+            filter_shape = list(layer.kernel_size)
+            if len(filter_shape) == 1:
+                filter_shape *= 2
+                
+            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=str(set(filter_shape)), padding_type=padding_type, padding=padding_vec, stride_y=layer.stride[0], stride_x=layer.stride[1])
         elif "softmax" in layer_name:
             add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
         elif "flatten" in layer_name:

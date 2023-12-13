@@ -95,9 +95,9 @@ public:
         
         {% for l in layers -%}
         {% if loop.first %}
-        this->{{ l['layer_name'] }}.build(input);
+        this->{{ l['layer_name'] }}.build(input, false);
         {% else %}
-        this->{{ l['layer_name'] }}.build(this->{{ l['previous_layer_name'] }}.get_output(), true);
+        this->{{ l['layer_name'] }}.build(this->{{ l['previous_layer_name'] }}.get_output(), false);
         {% endif %}
         {%-  endfor %}
     }

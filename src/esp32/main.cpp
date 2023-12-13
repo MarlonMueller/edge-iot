@@ -17,7 +17,7 @@
 #define MAIN_TAG "MAIN"
 
 // Entry point for ESP32 application
-#define TEST_WAV_SIZE 48000 // 48000 // 16000 * 3 seconds #FIXME -
+#define TEST_WAV_SIZE 49152 // 48000 // 16000 * 3 seconds #FIXME -
 #define MAX_TX_SIZE 255     // bytes. Max size of a LoRa packet
 
 static int8_t s_audio[TEST_WAV_SIZE];
@@ -48,10 +48,10 @@ extern "C" void app_main()
     init_i2s_mic();
     record_i2s_mic(s_audio, TEST_WAV_SIZE);
 
-    // for (int i = 0; i < TEST_WAV_SIZE; i++)
-    // {
-    //     ESP_LOGI(MAIN_TAG, "Value %d", s_audio[i]);
-    // }
+    for (int i = 0; i < 10; i++)
+    {
+        ESP_LOGI(MAIN_TAG, "Value %d", s_audio[i]);
+    }
 
     deinit_i2s_mic();
 
@@ -59,12 +59,12 @@ extern "C" void app_main()
     MFCC
     ************/
 
-    for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
-    {
-        s_audio[i] = 1.0;
-    }
+    // for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
+    // {
+    //     s_audio[i] = 1.0;
+    // }
 
-    int num_mfcc = 16;
+    int num_mfcc = 32;
 
     float **mfcc_output;
     size_t num_frames = 0;
@@ -158,7 +158,7 @@ extern "C" void app_main()
     float max_prob = probs[0];
     int max_index = 0;
 
-    for (size_t i = 1; i < 4; i++)
+    for (size_t i = 0; i < 4; i++)
     {
         ESP_LOGI(MAIN_TAG, "Prob %d: %f %%", i, probs[i] * 100);
         if (probs[i] > max_prob)
