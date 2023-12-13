@@ -1,0 +1,39 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node app.js",
+    "lint": "eslint \"**/*.js\"",
+    "lint-fix": "eslint \"**/*.js\" --fix"
+  },
+  "dependencies": {
+    "axios": "^0.26.1",
+    "bcrypt": "^5.1.0",
+    "body-parser": "^1.19.2",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "errorhandler": "^1.5.1",
+    "express": "^4.17.3",
+    "fs-extra": "^11.1.1",
+    "joi": "^17.9.1",
+    "jsonwebtoken": "^9.0.0",
+    "lodash": "^4.17.21",
+    "lusca": "^1.7.0",
+    "moment": "^2.29.1",
+    "mongodb": "^6.3.0",
+    "mongoose": "^8.0.3",
+    "nodemailer": "^6.9.1",
+    "pg": "^8.10.0",
+    "sequelize": "^6.31.0",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "eslint": "^8.12.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.4"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}

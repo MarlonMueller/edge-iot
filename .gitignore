@@ -14,7 +14,7 @@ data/audio/*
 data/img/*
 !data/audio/.gitkeep
 !data/img/.gitkeep
-
+backend/node_modules
 venv/
 build/
 # automatic dependences created by ESP32 IDF framework
