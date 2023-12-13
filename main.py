@@ -100,6 +100,8 @@ Accuracy of int8 model: 0.7635
     # Enable PSRAM malloc
     # Panic behaviour
     # DL Fix
+    # Exlude 0th offset?!!
+    # coefficient dimension has zero mean and unit variance:
     
     
     ########################################################
@@ -117,21 +119,21 @@ Accuracy of int8 model: 0.7635
     annotation_path = os.path.join(data_dir, "annotations.csv")
 
     # Query xeno-canto
-    #page = xeno_canto.get_composite_page(query)
+    page = xeno_canto.get_composite_page(query)
     # xeno_canto.plot_distribution(page, threshold=1)
 
     # Filter to top k species
-    #page = xeno_canto.filter_top_k_species(page, k=num_species)
-    # xeno_canto.plot_distribution(page, threshold=0)
+    page = xeno_canto.filter_top_k_species(page, k=num_species)
+    xeno_canto.plot_distribution(page, threshold=0)
 
     # Download audio files
-    #species_map = asyncio.run(
-    #   xeno_canto.get_page_audio(page, audio_dir, annotation_path)
-    #)
+    species_map = asyncio.run(
+       xeno_canto.get_page_audio(page, audio_dir, annotation_path)
+    )
     # species_map["other_species"] = num_species
     # species_map["other_sound"] = num_species
     
-    #sys.exit(0)
+    sys.exit(0)
 
     #esc50.get_esc50_audio(data_dir)
 
@@ -203,13 +205,19 @@ Accuracy of int8 model: 0.7635
     optimizer = optim.Adam(model.parameters())
 
     num_epochs = 20
+    training_losses = []
+    testing_losses = []
+    testing_accuracies = []
     for epoch in range(1, num_epochs + 1):
         create_classification_report = True if epoch == num_epochs else False
-        procedures.train(model, train_dataloader, optimizer, epoch, device)
-        procedures.test(
+        training_losses.append(procedures.train(model, train_dataloader, optimizer, epoch, device))
+        testing_loss, accuracy = procedures.test(
             model, test_dataloader, device, create_classification_report
         )
+        testing_losses.append(testing_loss)
+        testing_accuracies.append(accuracy)
 
+    utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
     torch_dir = os.path.join(models_dir, "torch")
 
     utils.save_model(model, torch_dir, model_name)

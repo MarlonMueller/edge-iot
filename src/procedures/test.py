@@ -42,3 +42,5 @@ def test(
 
     if create_classification_report:
         print(classification_report(ground_truth, predictions))
+        
+    return epoch_loss/len(data_loader), accuracy_score(ground_truth, predictions)

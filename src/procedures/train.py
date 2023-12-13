@@ -31,3 +31,5 @@ def train(
         f"[Training] Epoch: {epoch:3d}, Loss: {epoch_loss/len(data_loader):.4f}",
         end=" - ",
     )
+    
+    return epoch_loss/len(data_loader)
