@@ -17,13 +17,13 @@
 #define MAIN_TAG "MAIN"
 
 // Entry point for ESP32 application
-#define TEST_WAV_SIZE 44800
-#define MAX_TX_SIZE 255 // bytes. Max size of a LoRa packet
+#define TEST_WAV_SIZE 48000 // 48000 // 16000 * 3 seconds #FIXME -
+#define MAX_TX_SIZE 255     // bytes. Max size of a LoRa packet
 
 static int8_t s_audio[TEST_WAV_SIZE];
 static uint8_t s_tx_data[MAX_TX_SIZE];
 
-static int input_exponent = -7;
+static int input_exponent = -15;
 
 extern "C" void app_main()
 {
@@ -33,13 +33,14 @@ extern "C" void app_main()
     LORA Module
     ************/
 
-    setup_lora_comm();
+    // setup_lora_comm();
 
-    for (int i = 0; i < MAX_TX_SIZE; ++i) {
-        s_tx_data[i] = 0;
-    }
+    // for (int i = 0; i < MAX_TX_SIZE; ++i)
+    // {
+    //     s_tx_data[i] = 0;
+    // }
 
-    task_tx(s_tx_data, MAX_TX_SIZE);
+    // task_tx(s_tx_data, MAX_TX_SIZE);
 
     /**********
     MICROPHONE
@@ -58,8 +59,9 @@ extern "C" void app_main()
     MFCC
     ************/
 
-    for (size_t i=0; i<TEST_WAV_SIZE; ++i) {
-       s_audio[i] = 1.0;
+    for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
+    {
+        s_audio[i] = 1.0;
     }
 
     int num_mfcc = 16;
@@ -92,6 +94,10 @@ extern "C" void app_main()
     /**********
     DL
     ************/
+
+    // Expected input size [1, 32, 188]
+
+    ESP_LOGI(MAIN_TAG, "Total elements: %d", num_frames);
 
     int16_t *model_input = (int16_t *)malloc(total_elements * sizeof(int16_t *));
 
@@ -133,9 +139,9 @@ extern "C" void app_main()
     //     ESP_LOGI(MAIN_TAG, "Model input %d:", (int) model_input[i]);
     // }
 
-    Tensor<int8_t> input;
+    Tensor<int16_t> input;
     int num_frames_int = static_cast<int>(num_frames); // TODO: remove this cast
-    input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_mfcc, num_frames_int, 1}).set_auto_free(false);
+    input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_mfcc, num_frames_int, 1}).set_auto_free(false);
 
     BIRDNET model;
 
@@ -144,7 +150,7 @@ extern "C" void app_main()
 
     model.forward(input);
 
-    //latency.end();
+    // latency.end();
 
     // ESP-DL softmax implementation fix: this->channel = input.shape[0];
     float *probs = model.softmax.get_output().get_element_ptr();
@@ -154,7 +160,7 @@ extern "C" void app_main()
 
     for (size_t i = 1; i < 4; i++)
     {
-        ESP_LOGI(MAIN_TAG, "Prob %d: %f %%", i, probs[i]*100);
+        ESP_LOGI(MAIN_TAG, "Prob %d: %f %%", i, probs[i] * 100);
         if (probs[i] > max_prob)
         {
             max_prob = probs[i];
@@ -195,5 +201,4 @@ extern "C" void app_main()
 
         free(mfcc_output);
     }
-
 }
