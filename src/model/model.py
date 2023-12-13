@@ -15,25 +15,25 @@ class CustomModel(nn.Module):
         channels, height, width = input_size
 
         # Features (note: no support for nn.Sequential)
-        self.conv1 = nn.Conv2d(channels, 16, kernel_size=3, stride=(1,2), padding=0) # 16,173 - 14, 86
+        self.conv1 = nn.Conv2d(channels, 16, kernel_size=(3,5), stride=(1,3)) # 32,188 -> 30, 62
         self.relu1 = nn.ReLU(inplace=False)
-        self.pool1 = nn.MaxPool2d((1, 2), stride=(1, 2)) # 14, 43
-        self.conv2 = nn.Conv2d(16, 8, kernel_size=3, stride=(1,2), padding=0) # 12, 20
+        self.pool1 = nn.MaxPool2d((1, 2), stride=(1, 2), padding=(0, 1)) # 30, 32
+        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=(1,1)) # 28, 30
         self.relu2 = nn.ReLU(inplace=False)
-        self.pool2 = nn.MaxPool2d((2, 4), stride=(2, 4)) # 6, 5
-        # self.conv3 = nn.Conv2d(8, 8, kernel_size=3, stride=(2,3), padding=0) # 6,7
-        # self.relu3 = nn.ReLU(inplace=False)
-        #self.pool3 = nn.MaxPool2d((3, 3), stride=(3, 3)) # 11, 9
+        self.pool2 = nn.MaxPool2d((2, 2), stride=(2, 2), padding=(0, 1)) # 14, 16
+        self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=(1,1)) # 12,14
+        self.relu3 = nn.ReLU(inplace=False)
+        self.pool3 = nn.MaxPool2d((2, 2), stride=(2, 2)) # 6, 7
 
         # Classifier
-        self.fc1 = nn.Linear(self._calculate_feature_size(channels, height, width), 128)
+        self.fc1 = nn.Linear(self._calculate_feature_size(channels, height, width), 64)
         self.relu4 = nn.ReLU(inplace=False)
-        self.fc2 = nn.Linear(128, num_classes)
+        self.fc2 = nn.Linear(64, num_classes)
 
     def forward(self, x):
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
-        #x = self.pool3(self.relu3(self.conv3(x)))
+        x = self.pool3(self.relu3(self.conv3(x)))
         #x = self.relu3(self.conv3(x))
         x = torch.flatten(x, 1)
         x = self.fc2(self.relu4(self.fc1(x)))
@@ -47,7 +47,7 @@ class CustomModel(nn.Module):
         x = torch.rand(1, channels, height, width)
         x = self.pool1(self.relu1(self.conv1(x)))
         x = self.pool2(self.relu2(self.conv2(x)))
-        #x = self.pool3(self.relu3(self.conv3(x)))
+        x = self.pool3(self.relu3(self.conv3(x)))
         #x = self.relu3(self.conv3(x))
         print(f"x.size(): {x.size()}")
         feature_size = x.view(1, -1).size(1)

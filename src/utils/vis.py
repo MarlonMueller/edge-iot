@@ -2,6 +2,10 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({
+"font.size": 14,
+})
+
 def plot_image(image):
     """Plot an image"""
     plt.figure(figsize=(12, 2))

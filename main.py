@@ -28,53 +28,42 @@ if __name__ == "__main__":
     DATASET SIZE: approx. 800 bird, 1400 non-bird
     BIRDS: water_rail, common_moorhen, s_warbler
 
+Size of input: torch.Size([1, 32, 188])
+x.size(): torch.Size([1, 8, 6, 7])
+Feature size: 336
+
+precision    recall  f1-score   support
+
+           0       0.88      0.56      0.68        68
+           1       0.79      0.62      0.70        80
+           2       0.92      0.78      0.85        60
+           3       0.86      0.99      0.92       346
+
+    accuracy                           0.86       554
+   macro avg       0.87      0.74      0.79       554
+weighted avg       0.86      0.86      0.85       554
+
     return torch._C._cuda_getDeviceCount() > 0
 Size of input: torch.Size([1, 16, 173])
 x.size(): torch.Size([1, 8, 6, 5])
 Feature size: 240
-[Training] Epoch:   1, Loss: 1.1048 - [Testing] Loss: 1.0670, Accuracy: 0.6245
-[Training] Epoch:   2, Loss: 1.0075 - [Testing] Loss: 0.9495, Accuracy: 0.6245
-[Training] Epoch:   3, Loss: 0.9280 - [Testing] Loss: 0.9511, Accuracy: 0.6245
-[Training] Epoch:   4, Loss: 0.9026 - [Testing] Loss: 0.8626, Accuracy: 0.6245
-[Training] Epoch:   5, Loss: 0.8801 - [Testing] Loss: 0.8420, Accuracy: 0.6625
-[Training] Epoch:   6, Loss: 0.8750 - [Testing] Loss: 1.0168, Accuracy: 0.5686
-[Training] Epoch:   7, Loss: 0.8731 - [Testing] Loss: 0.8312, Accuracy: 0.6516
-[Training] Epoch:   8, Loss: 0.8440 - [Testing] Loss: 0.7887, Accuracy: 0.6841
-[Training] Epoch:   9, Loss: 0.8247 - [Testing] Loss: 0.7821, Accuracy: 0.6859
-[Training] Epoch:  10, Loss: 0.8117 - [Testing] Loss: 0.7553, Accuracy: 0.7058
-[Training] Epoch:  11, Loss: 0.7782 - [Testing] Loss: 0.7613, Accuracy: 0.6679
-[Training] Epoch:  12, Loss: 0.7628 - [Testing] Loss: 0.7152, Accuracy: 0.7365
-[Training] Epoch:  13, Loss: 0.7536 - [Testing] Loss: 0.7116, Accuracy: 0.7365
-[Training] Epoch:  14, Loss: 0.7313 - [Testing] Loss: 0.6948, Accuracy: 0.7473
-[Training] Epoch:  15, Loss: 0.7514 - [Testing] Loss: 0.6895, Accuracy: 0.7455
-[Training] Epoch:  16, Loss: 0.7086 - [Testing] Loss: 0.6784, Accuracy: 0.7527
-[Training] Epoch:  17, Loss: 0.6797 - [Testing] Loss: 0.6657, Accuracy: 0.7509
-[Training] Epoch:  18, Loss: 0.6825 - [Testing] Loss: 0.6567, Accuracy: 0.7708
-[Training] Epoch:  19, Loss: 0.6739 - [Testing] Loss: 0.6225, Accuracy: 0.7816
-[Training] Epoch:  20, Loss: 0.6784 - [Testing] Loss: 0.6766, Accuracy: 0.7671
-              precision    recall  f1-score   support
-
-           0       0.65      0.29      0.40        68
-           1       0.55      0.41      0.47        80
-           2       0.70      0.53      0.60        60
-           3       0.82      0.98      0.89       346
-
-    accuracy                           0.77       554
-   macro avg       0.68      0.56      0.59       554
-weighted avg       0.74      0.77      0.74       554
+Quantized model info:
+model input name: input, exponent: -15
+Conv layer name: /conv1/Conv, output_exponent: -14
+MaxPool layer name: /pool1/MaxPool, output_exponent: -14
+Conv layer name: /conv2/Conv, output_exponent: -13
+MaxPool layer name: /pool2/MaxPool, output_exponent: -13
+Conv layer name: /conv3/Conv, output_exponent: -12
+MaxPool layer name: /pool3/MaxPool, output_exponent: -12
+Flatten layer name: /Flatten, output_exponent: -12
+Gemm layer name: /fc1/Gemm, output_exponent: -11
+Gemm layer name: /fc2/Gemm, output_exponent: -10
+Softmax layer name: /Softmax, output_exponent: -14
 
 
 
-   Quantized model info:
-model input name: input, exponent: -7
-Conv layer name: /conv1/Conv, output_exponent: -7
-MaxPool layer name: /pool1/MaxPool, output_exponent: -7
-Conv layer name: /conv2/Conv, output_exponent: -7
-MaxPool layer name: /pool2/MaxPool, output_exponent: -7
-Flatten layer name: /Flatten, output_exponent: -7
-Gemm layer name: /fc1/Gemm, output_exponent: -5
-Gemm layer name: /fc2/Gemm, output_exponent: -4
-Softmax layer name: /Softmax, output_exponent: -6
+Accuracy of fp32 model: 0.8448
+Accuracy of int16 model: 0.8448
 
 
 
@@ -119,21 +108,19 @@ Accuracy of int8 model: 0.7635
     annotation_path = os.path.join(data_dir, "annotations.csv")
 
     # Query xeno-canto
-    page = xeno_canto.get_composite_page(query)
+    # page = xeno_canto.get_composite_page(query)
     # xeno_canto.plot_distribution(page, threshold=1)
 
     # Filter to top k species
-    page = xeno_canto.filter_top_k_species(page, k=num_species)
-    xeno_canto.plot_distribution(page, threshold=0)
+    #page = xeno_canto.filter_top_k_species(page, k=num_species)
+    #xeno_canto.plot_distribution(page, threshold=0)
 
     # Download audio files
-    species_map = asyncio.run(
-       xeno_canto.get_page_audio(page, audio_dir, annotation_path)
-    )
+    #species_map = asyncio.run(
+    #   xeno_canto.get_page_audio(page, audio_dir, annotation_path)
+    #)
     # species_map["other_species"] = num_species
     # species_map["other_sound"] = num_species
-    
-    sys.exit(0)
 
     #esc50.get_esc50_audio(data_dir)
 
@@ -187,6 +174,8 @@ Accuracy of int8 model: 0.7635
     #     img2 = librosa.display.specshow(mfcc2, ax=ax2)
     #     plt.show()
 
+    # sys.exit(0)
+
     ########################################################
     #  Training
     ########################################################
@@ -204,7 +193,7 @@ Accuracy of int8 model: 0.7635
 
     optimizer = optim.Adam(model.parameters())
 
-    num_epochs = 20
+    num_epochs = 75
     training_losses = []
     testing_losses = []
     testing_accuracies = []
@@ -248,7 +237,7 @@ Accuracy of int8 model: 0.7635
     cpp_dir = os.path.join(PATH, "src", "model")
 
     target_chip = "esp32s3"
-    quantization_bit = "int8"
+    quantization_bit = "int16"
     granularity = "per-tensor"
     calib_method = "minmax"
     provider = "CPUExecutionProvider"

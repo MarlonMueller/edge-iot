@@ -26,14 +26,54 @@ def get_layer_info(model, log_data):
 
         if "conv" in layer_name:
             layer = getattr(model, layer_name)
-            add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1], activation=True)
+
+
+            if isinstance(layer.padding, int) or len(layer.padding) == 1:
+                if isinstance(layer.padding, int):
+                    padding = layer.padding
+                else:
+                    padding = layer.padding[0]
+                if padding == 0:
+                    padding_type = "PADDING_VALID"
+                    padding_vec = "{}"
+                else:
+                    padding_type = "PADDING_NOT_SET"
+                    padding_vec = f"{{{padding},{padding},{padding},{padding}}}"
+               
+            else:
+                padding_height = layer.padding[0]
+                padding_width = layer.padding[1]
+                padding_type = "PADDING_NOT_SET"
+                padding_vec = f"{{{padding_height},{padding_height},{padding_width},{padding_width}}}"
+
+            add_layer_info("conv2d", layer_name, previous_layer_name, output_exponent=output_exponent, padding_type=padding_type, padding=padding_vec, stride_y=layer.stride[0], stride_x=layer.stride[1], activation=True)
         elif "fc" in layer_name:
             add_layer_info("fc", layer_name, previous_layer_name, output_exponent=output_exponent, flatten="true", activation=(i != len(log_data) - 2))
         elif "relu" in layer_name:
             add_layer_info("relu", layer_name, previous_layer_name, inplace="false")
         elif "pool" in layer_name:
             layer = getattr(model, layer_name)
-            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=str(set(list(layer.kernel_size))), padding_type="PADDING_VALID", padding="{}", stride_y=layer.stride[0], stride_x=layer.stride[1])
+         
+
+            if isinstance(layer.padding, int) or len(layer.padding) == 1:
+                if isinstance(layer.padding, int):
+                    padding = layer.padding
+                else:
+                    padding = layer.padding[0]
+                if padding == 0:
+                    padding_type = "PADDING_VALID"
+                    padding_vec = "{}"
+                else:
+                    padding_type = "PADDING_NOT_SET"
+                    padding_vec = f"{{{padding},{padding},{padding},{padding}}}"
+               
+            else:
+                padding_height = layer.padding[0]
+                padding_width = layer.padding[1]
+                padding_type = "PADDING_NOT_SET"
+                padding_vec = f"{{{padding_height},{padding_height},{padding_width},{padding_width}}}"
+
+            add_layer_info("maxpool2d", layer_name, previous_layer_name, filter_shape=str(set(list(layer.kernel_size))), padding_type=padding_type, padding=padding_vec, stride_y=layer.stride[0], stride_x=layer.stride[1])
         elif "softmax" in layer_name:
             add_layer_info("softmax", layer_name, previous_layer_name, output_exponent=output_exponent, inplace="false")
         elif "flatten" in layer_name:

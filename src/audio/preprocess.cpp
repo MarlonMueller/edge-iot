@@ -54,10 +54,10 @@ static const char *PREPROCESS_TAG = "PREPROCESS";
 #define FMAX (SAMPLE_RATE / 2) // Nyquist (default by Librosa)
 
 #define HOP_LENGTH_SAMPLES 256
-#define WIN_LENGTH_SAMPLES 512     // for ESP-IDF implementation, 
+#define WIN_LENGTH_SAMPLES 1024     // for ESP-IDF implementation, 
 #define NUM_FFT WIN_LENGTH_SAMPLES // must be Power of 2 because of FFT
 
-#define N_MELS 16
+#define N_MELS 32
 
 #define HZ_TO_MEL(frequency) (2595.0 * log10(1.0 + (frequency) / 700.0))
 #define MEL_TO_HZ(mels) (700.0 * (pow(10.0, (mels) / 2595.0) - 1.0))

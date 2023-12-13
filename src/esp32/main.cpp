@@ -93,7 +93,7 @@ extern "C" void app_main()
     DL
     ************/
 
-    int8_t *model_input = (int8_t *)malloc(total_elements * sizeof(int8_t *));
+    int16_t *model_input = (int16_t *)malloc(total_elements * sizeof(int16_t *));
 
     // TODO: cleanr implementation / code convention
     float min_value = std::numeric_limits<float>::max();
@@ -123,7 +123,7 @@ extern "C" void app_main()
             {
                 float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
                 // ESP_LOGI(MAIN_TAG, "Normalized input: %f", normalized_input);
-                // model_input[pos] = 0.0; // (int8_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
+                model_input[pos] = (int16_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
                 ++pos;
             }
         }
@@ -138,7 +138,13 @@ extern "C" void app_main()
     input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_mfcc, num_frames_int, 1}).set_auto_free(false);
 
     BIRDNET model;
+
+    // dl::tool::Latency latency;
+    // latency.start();
+
     model.forward(input);
+
+    //latency.end();
 
     // ESP-DL softmax implementation fix: this->channel = input.shape[0];
     float *probs = model.softmax.get_output().get_element_ptr();
@@ -148,7 +154,7 @@ extern "C" void app_main()
 
     for (size_t i = 1; i < 4; i++)
     {
-        ESP_LOGI(MAIN_TAG, "Prob %d: %f", i, probs[i]);
+        ESP_LOGI(MAIN_TAG, "Prob %d: %f %%", i, probs[i]*100);
         if (probs[i] > max_prob)
         {
             max_prob = probs[i];
@@ -189,4 +195,5 @@ extern "C" void app_main()
 
         free(mfcc_output);
     }
+
 }

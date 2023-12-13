@@ -11,14 +11,14 @@ import argparse
 import scipy
 
 # CONSTANTS. Need to be adjusted for our application.
-N_FFT = 512
+N_FFT = 1024
 HOP_LENGTH = 256
-N_MELS = 16
+N_MELS = 32
 
 # Functions
 
 
-def mfcc_from_file(file: str, plot: bool = False, sr: int = 22050) -> np.ndarray:
+def mfcc_from_file(file: str, plot: bool = False, sr: int = 16000) -> np.ndarray:
     """
     Compute the MFCC of an audio file.
 
@@ -34,7 +34,7 @@ def mfcc_from_file(file: str, plot: bool = False, sr: int = 22050) -> np.ndarray
     # Load the audio file
 
     # TODO - proper audio slicing
-    y, _ = librosa.load(file, sr=sr, duration=2.0)
+    y, _ = librosa.load(file, sr=sr, duration=3.0)
 
     # Compute the MFCC
     mfcc = librosa.feature.mfcc(
