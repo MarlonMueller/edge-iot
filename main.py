@@ -72,6 +72,7 @@ Accuracy of int8 model: 0.7635
     """
     
     
+
    
     
     
@@ -180,47 +181,133 @@ Accuracy of int8 model: 0.7635
     #  Training
     ########################################################
 
+    from src.model import model_tf
+    import tensorflow as tf
+    from tensorflow.keras import layers, models, optimizers
+    from tensorflow.keras.losses import SparseCategoricalCrossentropy
+    from tensorflow.keras.metrics import SparseCategoricalAccuracy
+
+    import numpy as np    
+
     batch_size = 32
 
-    train_dataloader = DataLoader(
-        train_data, batch_size=batch_size, shuffle=True, generator=generator
-    )
-    test_dataloader = DataLoader(
-        test_data, batch_size=batch_size, shuffle=True, generator=generator
-    )
+    #NOTE - Temporary and hacky way to convert to tensorflow    
+    train_data_np = [(np.transpose(item[0].numpy(), (1, 2, 0)), item[1]) for item in train_data]
+    test_data_np = [(np.transpose(item[0].numpy(), (1, 2, 0)), item[1]) for item in test_data]
 
-    model = CustomModel(input_size, num_classes=num_species+1).to(device)
 
-    optimizer = optim.Adam(model.parameters())
+    train_inputs, train_labels = zip(*train_data_np)
+    test_inputs, test_labels = zip(*test_data_np)
 
-    num_epochs = 75
+    train_inputs = np.array(train_inputs)
+    train_labels = np.array(train_labels)
+    test_inputs = np.array(test_inputs)
+    test_labels = np.array(test_labels)
+
+    train_dataset = tf.data.Dataset.from_tensor_slices((train_inputs, train_labels))
+    test_dataset = tf.data.Dataset.from_tensor_slices((test_inputs, test_labels))
+
+
+    train_dataloader = tf.data.Dataset.from_tensor_slices((train_inputs, train_labels)).batch(batch_size).shuffle(buffer_size=len(train_dataset))
+    test_dataloader = tf.data.Dataset.from_tensor_slices((test_inputs, test_labels)).batch(batch_size).shuffle(buffer_size=len(test_dataset))
+    model = model_tf.CustomModel(input_size, num_classes=num_species + 1)
+
+    optimizer = optimizers.Adam()
+    loss_function = SparseCategoricalCrossentropy()
+
+
+    num_epochs = 50
+
     training_losses = []
     testing_losses = []
     testing_accuracies = []
+
     for epoch in range(1, num_epochs + 1):
-        create_classification_report = True if epoch == num_epochs else False
-        training_losses.append(procedures.train(model, train_dataloader, optimizer, epoch, device))
-        testing_loss, accuracy = procedures.test(
-            model, test_dataloader, device, create_classification_report
-        )
-        testing_losses.append(testing_loss)
-        testing_accuracies.append(accuracy)
+        for batch in train_dataloader:
+            inputs, labels = batch
+            with tf.GradientTape() as tape:
+                predictions = model(inputs, training=True)
+                loss = loss_function(labels, predictions)
 
-    utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
-    torch_dir = os.path.join(models_dir, "torch")
+            gradients = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-    utils.save_model(model, torch_dir, model_name)
+        train_loss = tf.reduce_mean(loss_function(train_labels, model(train_inputs, training=False)))
+        training_losses.append(train_loss)
+
+        if True:
+            
+            total_correct = 0
+            total_samples = 0
+            testing_loss = 0.0
+
+            for batch in test_dataloader:
+                test_inputs, test_labels = batch
+                test_predictions = model(test_inputs, training=False)
+                test_loss = loss_function(test_labels, test_predictions)
+
+                testing_loss += tf.reduce_mean(test_loss)
+
+                predicted_labels = tf.argmax(test_predictions, axis=1)
+                correct_predictions = tf.equal(predicted_labels, tf.cast(test_labels, tf.int64))
+                total_correct += tf.reduce_sum(tf.cast(correct_predictions, tf.float32))
+                total_samples += test_labels.shape[0]
+
+            testing_loss = testing_loss / len(test_dataloader)
+            testing_accuracy = total_correct / total_samples
+            testing_losses.append(testing_loss)
+            testing_accuracies.append(testing_accuracy)
+
+        print(f"Epoch {epoch}/{num_epochs}, Training Loss: {train_loss.numpy()}, Testing Loss: {testing_loss.numpy()}, Testing Accuracy: {testing_accuracy.numpy()}")
     
+
+    model.save_weights("model_weights.ckpt")
+    utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
+
+    # batch_size = 32
+
+    # train_dataloader = DataLoader(
+    #     train_data, batch_size=batch_size, shuffle=True, generator=generator
+    # )
+    # test_dataloader = DataLoader(
+    #     test_data, batch_size=batch_size, shuffle=True, generator=generator
+    # )
+
+    # model = CustomModel(input_size, num_classes=num_species+1).to(device)
+
+    # optimizer = optim.Adam(model.parameters())
+
+    # num_epochs = 75
+    # training_losses = []
+    # testing_losses = []
+    # testing_accuracies = []
+    
+    # for epoch in range(1, num_epochs + 1):
+    #     create_classification_report = True if epoch == num_epochs else False
+    #     training_losses.append(procedures.train(model, train_dataloader, optimizer, epoch, device))
+    #     testing_loss, accuracy = procedures.test(
+    #         model, test_dataloader, device, create_classification_report
+    #     )
+    #     testing_losses.append(testing_loss)
+    #     testing_accuracies.append(accuracy)
+
+    # utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
+    # torch_dir = os.path.join(models_dir, "torch")
+
+    # utils.save_model(model, torch_dir, model_name)
+
 
     ########################################################
     #  ONNX
     ########################################################
 
-    model = utils.load_model(model, torch_dir, model_name)
+    # model = utils.load_model(model, torch_dir, model_name)
 
     onnx_dir = os.path.join(models_dir, "onnx")
 
-    utils.export_onnx(model, onnx_dir, model_name, input_size)
+    #utils.export_onnx(model, onnx_dir, model_name, input_size)
+    utils.export_onnx_tf(onnx_dir, model, model_name)
+    
     utils.load_onnx(onnx_dir, model_name, check_graph=True)
 
     onnx_optimized_path = optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))

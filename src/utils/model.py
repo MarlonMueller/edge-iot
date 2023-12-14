@@ -1,6 +1,8 @@
 import os
 import torch
 import onnx
+import tf2onnx
+import tensorflow as tf
 from onnx import checker
 from jinja2 import Template
 
@@ -38,7 +40,14 @@ def export_onnx(model, dir, model_name, input_size):
             "output": {0: "batch_size"}
         }
     )
-    
+
+def export_onnx_tf(dir, model, model_name):
+    input_size = (183, 32) #FIXME - 
+    spec = (tf.TensorSpec((None, input_size[0],input_size[1], 1), tf.float32, name="input"),)
+    path = os.path.join(dir, f"{model_name}_tf.onnx")
+    tf2onnx.convert.from_keras(model, input_signature=spec, opset=13, output_path=path)
+
+
 def load_onnx(dir, model_name, check_graph:bool = False):
     path = os.path.join(dir, f"{model_name}.onnx")
     model_proto = onnx.load_model(path)
