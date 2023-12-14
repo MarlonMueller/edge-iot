@@ -1,27 +1,45 @@
 <script>
 	import { onMount } from "svelte";
 	import { fade } from 'svelte/transition';
+	import axios from 'axios';
 	import CaliforniaCondor from '$lib/California_Condor.jpg'
 
 	$: birds=[]
 
 
-	//Dummy data
-	onMount(async ()=>{
-		
-		while(true){
-			birds.push({name:"California condor", long:"48.1514606",lat:"11.5779399"})
-			birds=birds
-			await delay(2000);
+	onMount(async () => {
+	  const fetchData = async () => {
+		try {
+			const response = await axios.post('http://169.254.157.209:8080/birds/get', {})
+		  if (response?.data?.statusCode==="000") {
+			const data = response.data.data;
+			if(birds.length==0){
+				birds = data
+			}
+			else{
+			// Add only the new birds that are not already in the array
+            const newBirds = await data.filter(newBird => !birds.some(existingBird => existingBird._id === newBird._id));
+            birds = [...birds, ...newBirds];
+			console.log("NEW BIRDS", newBirds);
+			// birds = birds
+			}
+		  } else {
+			console.error('Failed to fetch data:', response.statusText);
+		  }
+		} catch (error) {
+		  console.error('Error fetching data:', error.message);
 		}
-	})
-	const delay = (milliseconds) => {
-		return new Promise(resolve => {
-			setTimeout(() => {
-			resolve();
-			}, milliseconds);
-		});
-		};
+	  };
+  
+	  // Fetch data initially
+	  fetchData();
+  
+	  // Set up an interval to fetch data every 3 seconds
+	  const interval = setInterval(fetchData, 3000);
+  
+	  // Cleanup the interval when the component is unmounted
+	  return () => clearInterval(interval);
+	});
 </script>
 <div class="container mx-auto flex justify-center">
 	<div class="space-y-10">
