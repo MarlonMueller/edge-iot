@@ -38,13 +38,13 @@ public:
 
     BIRDNET() :
         conv1(Conv2D<int16_t>(-14, get__conv1_conv_filter(), get__conv1_conv_bias(), get__conv1_conv_activation(), PADDING_NOT_SET, {1,1,0,0}, 3, 1, "conv1")),
-        pool1(MaxPool2D<int16_t>({1, 2}, PADDING_NOT_SET, {1,1,0,0}, 2, 1, "pool1")),
+        pool1(MaxPool2D<int16_t>({2,1}, PADDING_NOT_SET, {1,1,0,0}, 2, 1, "pool1")),
         
         conv2(Conv2D<int16_t>(-12, get__conv2_conv_filter(), get__conv2_conv_bias(), get__conv2_conv_activation(), PADDING_NOT_SET, {0,0,0,0}, 1, 1, "conv2")),
-        pool2(MaxPool2D<int16_t>({2}, PADDING_NOT_SET, {0,0,0,0}, 2, 2, "pool2")),
+        pool2(MaxPool2D<int16_t>({2,2}, PADDING_NOT_SET, {1,1,0,0}, 2, 2, "pool2")),
         
         conv3(Conv2D<int16_t>(-11, get__conv3_conv_filter(), get__conv3_conv_bias(), get__conv3_conv_activation(), PADDING_NOT_SET, {0,0,0,0}, 1, 1, "conv3")),
-        pool3(MaxPool2D<int16_t>({1, 2}, PADDING_VALID, {}, 2, 1, "pool3")),
+        pool3(MaxPool2D<int16_t>({2,2}, PADDING_NOT_SET, {1,1,0,0}, 2, 2, "pool3")),
         
         flatten(Flatten<int16_t>("flatten", false)),
         
@@ -52,7 +52,7 @@ public:
         
         fc2(FullyConnected<int16_t>(-11, get__fc2_gemm_filter(), get__fc2_gemm_bias(), NULL, true, "fc2")),
         
-        softmax(Softmax<int16_t>(-14, "softmax")){}
+        softmax(Softmax<int16_t>(-15, "softmax")){}
         
 
     void build(Tensor<int16_t>& input) {

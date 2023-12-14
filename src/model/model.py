@@ -15,15 +15,15 @@ class CustomModel(nn.Module):
         channels, height, width = input_size
 
         # Features (note: no support for nn.Sequential)
-        self.conv1 = nn.Conv2d(channels, 16, kernel_size=(5,3), stride=(3,1), padding=(1, 0)) # 183,32 -> 59, 18
+        self.conv1 = nn.Conv2d(channels, 16, kernel_size=(5,3), stride=(3,1), padding=(1, 0)) # 183,32 -> 61, 30
         self.relu1 = nn.ReLU(inplace=False)
-        self.pool1 = nn.MaxPool2d((2, 1), stride=(2, 1), padding=(1, 0)) # 30, 18
-        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=(1,1)) # 28, 16
+        self.pool1 = nn.MaxPool2d((2, 1), stride=(2, 1), padding=(1, 0)) # 31, 30
+        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=(1,1)) # 29, 28
         self.relu2 = nn.ReLU(inplace=False)
-        self.pool2 = nn.MaxPool2d((2, 2), stride=(2, 2), padding=(0, 0)) # 14, 8
-        self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=(1,1)) # 12,6
+        self.pool2 = nn.MaxPool2d((2, 2), stride=(2, 2), padding=(1, 0)) # 15, 14
+        self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=(1,1)) # 13,12
         self.relu3 = nn.ReLU(inplace=False)
-        self.pool3 = nn.MaxPool2d((2, 1), stride=(2, 1)) # 6, 6
+        self.pool3 = nn.MaxPool2d((2, 2), stride=(2, 2), padding=(1, 0)) # 7, 6
 
         # Classifier
         self.fc1 = nn.Linear(self._calculate_feature_size(channels, height, width), 64)
