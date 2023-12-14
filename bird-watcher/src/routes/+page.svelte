@@ -10,7 +10,7 @@
 	onMount(async () => {
 	  const fetchData = async () => {
 		try {
-			const response = await axios.post('http://169.254.157.209:8080/birds/get', {})
+			const response = await axios.post('http://172.20.10.2:8080/birds/get', {})
 		  if (response?.data?.statusCode==="000") {
 			const data = response.data.data;
 			if(birds.length==0){
