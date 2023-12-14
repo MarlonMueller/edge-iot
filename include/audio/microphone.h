@@ -13,9 +13,9 @@
 // The following pins are used. Remember to also connect the power supply and
 // ground pins. 5 pins are used in total. 
 
-#define DATA_PIN 7
-#define BCLK_PIN 4
 #define WS_PIN 17
+#define DATA_PIN 7
+#define BCLK_PIN 5
 
 /**
  * @brief Initialize I2S transmission for microphone. 
