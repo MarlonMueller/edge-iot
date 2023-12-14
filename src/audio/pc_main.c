@@ -8,20 +8,19 @@
 
 #include "audio/preprocess.h"
 
+#define TEST_WAV_SIZE 48000
 
-#define TEST_WAV_SIZE 44800
-
-static int8_t audio[TEST_WAV_SIZE];
+float audio[TEST_WAV_SIZE];
 
 int main() {
     printf("Starting application");
     
-    for (int i = 0; i < TEST_WAV_SIZE; i++) {
-        audio[i] = 1.0;
-    }
-    
     float **mfcc_output;
     size_t mfcc_size = 0;
+
+    for (int i = 0; i < TEST_WAV_SIZE; i++) {
+        audio[i] = 1.0f;
+    }
 
     malloc_mfcc_module();
     mfcc(audio, TEST_WAV_SIZE, &mfcc_output, &mfcc_size);

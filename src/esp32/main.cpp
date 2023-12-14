@@ -20,7 +20,7 @@
 #define TEST_WAV_SIZE 49152 // 48000 // 16000 * 3 seconds #FIXME -
 #define MAX_TX_SIZE 255     // bytes. Max size of a LoRa packet
 
-static int8_t s_audio[TEST_WAV_SIZE];
+static float s_audio[TEST_WAV_SIZE];
 static uint8_t s_tx_data[MAX_TX_SIZE];
 
 static int input_exponent = -15;
@@ -33,24 +33,25 @@ extern "C" void app_main()
     LORA Module
     ************/
 
-    // setup_lora_comm();
+    setup_lora_comm();
 
-    // for (int i = 0; i < MAX_TX_SIZE; ++i)
-    // {
-    //     s_tx_data[i] = 0;
-    // }
 
-    // task_tx(s_tx_data, MAX_TX_SIZE);
+    task_tx(s_tx_data, MAX_TX_SIZE);
 
     /**********
     MICROPHONE
     ************/
     init_i2s_mic();
-    record_i2s_mic(s_audio, TEST_WAV_SIZE);
 
-    for (int i = 0; i < 10; i++)
+    ESP_LOGI(MAIN_TAG, "Recording audio");
+
+    // record_i2s_mic(s_audio, TEST_WAV_SIZE);
+
+    ESP_LOGI(MAIN_TAG, "Finished recording audio");
+
+    for (int i = 50; i < 70; i++)
     {
-        ESP_LOGI(MAIN_TAG, "Value %d", s_audio[i]);
+        ESP_LOGI(MAIN_TAG, "Value %f", s_audio[i]);
     }
 
     deinit_i2s_mic();

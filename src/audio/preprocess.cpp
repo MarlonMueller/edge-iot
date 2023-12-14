@@ -58,6 +58,7 @@ static const char *PREPROCESS_TAG = "PREPROCESS";
 #define NUM_FFT WIN_LENGTH_SAMPLES // must be Power of 2 because of FFT
 
 #define N_MELS 32
+#define N_MFCC 20  // NOTE: Must be less than N_MELS
 
 #define HZ_TO_MEL(frequency) (2595.0 * log10(1.0 + (frequency) / 700.0))
 #define MEL_TO_HZ(mels) (700.0 * (pow(10.0, (mels) / 2595.0) - 1.0))
@@ -90,7 +91,7 @@ static float *s_mel_buffer;
 
 size_t get_num_mfcc() 
 {
-    return N_MELS;
+    return N_MFCC;
 }
 
 size_t get_num_frames(size_t num_samples) 
@@ -107,32 +108,31 @@ void fft_frequencies(float *fft_freq)
     }
 }
 
-void mel_frequencies(float *mel_freq, int num_points) 
+void mel_frequencies(double *mel_freq, int num_points) 
 {
-    float min_mel = HZ_TO_MEL(FMIN);
-    float max_mel = HZ_TO_MEL(FMAX);
-    float h = (max_mel - min_mel) / (num_points - 1);
+    double min_mel = HZ_TO_MEL(FMIN);
+    double max_mel = HZ_TO_MEL(FMAX);
 
     for (int i = 0; i < num_points; ++i) {
-        mel_freq[i] = MEL_TO_HZ(min_mel + i * h);
+        mel_freq[i] = MEL_TO_HZ(min_mel + i * (max_mel - min_mel) / (num_points - 1));
     }
 }
 
 void mel_filters(float **weights) 
 {
-    float fft_freq[NUM_FFT / 2 + 1];
+    float fft_freq[NUM_FFT / 2 + 1]; // Checked
     fft_frequencies(fft_freq);
 
-    float mel_freq[N_MELS + 2];
+    double mel_freq[N_MELS + 2];
     mel_frequencies(mel_freq, N_MELS + 2);
 
     // Computation of mel filter bank
 
     for (size_t i=0; i < N_MELS; ++i) {
         for (size_t j=0; j < NUM_FFT/2 + 1; ++j) {
-            float lower = mel_freq[i];
-            float center = mel_freq[i + 1];
-            float upper = mel_freq[i + 2];
+            double lower = mel_freq[i];
+            double center = mel_freq[i + 1];
+            double upper = mel_freq[i + 2];
 
             if (fft_freq[j] >= lower && fft_freq[j] <= upper) {
                 if (fft_freq[j] < center) {
@@ -143,9 +143,20 @@ void mel_filters(float **weights)
             } else {
                 weights[i][j] = 0;
             }
+
+            // Slaney normalization
+
+            weights[i][j] *= 2.0 / (mel_freq[i + 2] - mel_freq[i]);
         }
     }
 };
+
+void preemphasis(float *wav_values, size_t num_samples, float coeff) 
+{
+    for (size_t i = num_samples - 1; i > 0; --i) {
+        wav_values[i] -= coeff * wav_values[i - 1];
+    }
+}
 
 // Main functions to interface. 
 
@@ -191,7 +202,7 @@ esp_err_t malloc_mfcc_module()
 }
 
 
-esp_err_t mfcc(const int8_t *wav_values, size_t num_samples, 
+esp_err_t mfcc(float *wav_values, size_t num_samples, 
                float ***output, size_t *output_frames) 
 {
 
@@ -220,7 +231,7 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
     }
     
     for (size_t i = 0; i<num_frames; ++i) {
-        (*output)[i] = (float *)malloc(N_MELS * sizeof(float));
+        (*output)[i] = (float *)malloc(N_MFCC * sizeof(float));
 
         if ((*output)[i] == NULL) {
             ESP_LOGE(PREPROCESS_TAG, "Error output[%d] allocation", i);
@@ -228,6 +239,10 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
             return ret;
         }
     }
+
+    // Preemphasis
+
+    // preemphasis(wav_values, num_samples, 0.97); // 0.97 usual value
     
     // Framing computation
 
@@ -235,7 +250,8 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
         size_t ref_frame = i * HOP_LENGTH_SAMPLES;
 
         for (size_t j=0; j < WIN_LENGTH_SAMPLES; ++j) {
-            s_fft_operand[2*j] = wav_values[ref_frame + j] * s_window[j]; // Re
+            float value = wav_values[ref_frame + j];
+            s_fft_operand[2*j] = value * s_window[j]; // Re
             s_fft_operand[2*j + 1] = 0; // Im
         }
 
@@ -264,10 +280,10 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
         // Mel filter bank computation
 
         for (size_t j = 0; j < N_MELS; ++j) {
-            float mel_power = 0;
+            double mel_power = 0;
 
             for (size_t k=0; k < NUM_FFT/2 + 1; ++k) {
-                mel_power += s_power_spectrum[k] * s_mel_filt[j][k];
+                mel_power += s_power_spectrum[k] * s_mel_filt[j][k]; // Checked
             }
 
             s_mel_buffer[j] = POWER_TO_DB(mel_power); // Re
@@ -283,8 +299,10 @@ esp_err_t mfcc(const int8_t *wav_values, size_t num_samples,
 
         // Store result
         
-        for (size_t j=0; j<N_MELS; ++j) {
-            (*output)[i][j] = dct_output[j];
+        // The first coefficient is discarded, as in Librosa's implementation.
+
+        for (size_t j=0; j<N_MFCC; ++j) {
+            (*output)[i][j] = dct_output[j+1];
         }
         
     }
