@@ -17,6 +17,7 @@ data/audio/*
 !data/audio/.gitkeep
 
 
+.venv/
 venv/
 build/
 # automatic dependences created by ESP32 IDF framework
