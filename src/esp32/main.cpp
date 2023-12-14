@@ -14,13 +14,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "audio.c"
+
 #define MAIN_TAG "MAIN"
 
 // Entry point for ESP32 application
-#define TEST_WAV_SIZE 49152 // 48000 // 16000 * 3 seconds #FIXME -
+#define TEST_WAV_SIZE 48000 // 16000 * 3 seconds #FIXME -
 #define MAX_TX_SIZE 255     // bytes. Max size of a LoRa packet
 
-static float s_audio[TEST_WAV_SIZE];
+// static int8_t s_audio[TEST_WAV_SIZE];
 static uint8_t s_tx_data[MAX_TX_SIZE];
 
 static int input_exponent = -15;
@@ -29,43 +31,38 @@ extern "C" void app_main()
 {
     ESP_LOGI(MAIN_TAG, "Starting application");
 
-    /**********
-    LORA Module
-    ************/
+    // /**********
+    // LORA Module
+    // ************/
 
-    setup_lora_comm();
-
-
-    task_tx(s_tx_data, MAX_TX_SIZE);
+    // setup_lora_comm();
+    // task_tx(s_tx_data, MAX_TX_SIZE);
 
     /**********
     MICROPHONE
     ************/
-    init_i2s_mic();
-
-    ESP_LOGI(MAIN_TAG, "Recording audio");
+    // init_i2s_mic();
 
     // record_i2s_mic(s_audio, TEST_WAV_SIZE);
 
-    ESP_LOGI(MAIN_TAG, "Finished recording audio");
+    // ESP_LOGI(MAIN_TAG, "Finished recording audio");
 
-    for (int i = 50; i < 70; i++)
-    {
-        ESP_LOGI(MAIN_TAG, "Value %f", s_audio[i]);
-    }
+    // for (int i = 50; i < 70; i++) {
+    //     ESP_LOGI(MAIN_TAG, "Value %d", s_audio[i]);
+    // }
 
-    deinit_i2s_mic();
+    // deinit_i2s_mic();
 
     /**********
     MFCC
     ************/
 
-    // for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
-    // {
-    //     s_audio[i] = 1.0;
-    // }
+    for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
+    {
+        s_audio[i] = 1.0;
+    }
 
-    int num_mfcc = 32;
+    int num_mfcc = get_num_mfcc();
 
     float **mfcc_output;
     size_t num_frames = 0;
@@ -142,7 +139,7 @@ extern "C" void app_main()
 
     Tensor<int16_t> input;
     int num_frames_int = static_cast<int>(num_frames); // TODO: remove this cast
-    input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_mfcc, num_frames_int, 1}).set_auto_free(false);
+    input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(false);
 
     BIRDNET model;
 

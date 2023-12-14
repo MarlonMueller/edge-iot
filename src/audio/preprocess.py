@@ -18,17 +18,18 @@ import ctypes # for C library usage
 
 # Functions
 
-def mfcc(wav: int):
+def mfcc(wav: np.array):
 
     # Calculate data from C library
 
     lib = ctypes.CDLL('./src/audio/preprocess.so') 
 
-    lib.mfcc.argtypes = [ctypes.POINTER(ctypes.c_float), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))), ctypes.POINTER(ctypes.c_size_t)]
+    lib.mfcc.argtypes = [ctypes.POINTER(ctypes.c_int8), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))), ctypes.POINTER(ctypes.c_size_t)]
     lib.mfcc.restype = ctypes.c_int
 
-    wav_values = np.array(wav, dtype=np.float32)
-    wav_values_ptr = ctypes.cast(wav_values.ctypes.data, ctypes.POINTER(ctypes.c_float))
+    wav = np.array(wav)
+    wav_values = np.array(wav * (1 << 7), dtype=np.int8)
+    wav_values_ptr = ctypes.cast(wav_values.ctypes.data, ctypes.POINTER(ctypes.c_int8))
 
     output_frames = ctypes.c_size_t()
     output = ctypes.POINTER(ctypes.POINTER(ctypes.c_float))()

@@ -57,8 +57,8 @@ static const char *PREPROCESS_TAG = "PREPROCESS";
 #define WIN_LENGTH_SAMPLES 1024     // for ESP-IDF implementation, 
 #define NUM_FFT WIN_LENGTH_SAMPLES // must be Power of 2 because of FFT
 
-#define N_MELS 32
-#define N_MFCC 20  // NOTE: Must be less than N_MELS
+#define N_MELS 40
+#define N_MFCC 32  // NOTE: Must be less than N_MELS
 
 #define HZ_TO_MEL(frequency) (2595.0 * log10(1.0 + (frequency) / 700.0))
 #define MEL_TO_HZ(mels) (700.0 * (pow(10.0, (mels) / 2595.0) - 1.0))
@@ -250,6 +250,7 @@ esp_err_t mfcc(float *wav_values, size_t num_samples,
         size_t ref_frame = i * HOP_LENGTH_SAMPLES;
 
         for (size_t j=0; j < WIN_LENGTH_SAMPLES; ++j) {
+            // float value = wav_values[ref_frame + j] / (float) INT8_MAX;
             float value = wav_values[ref_frame + j];
             s_fft_operand[2*j] = value * s_window[j]; // Re
             s_fft_operand[2*j + 1] = 0; // Im

@@ -10,11 +10,17 @@
 #include "driver/i2s.h"
 #include "soc/i2s_reg.h"
 
+#include "esp_log.h"
+
 #define I2S_PORT I2S_NUM_0
 #define I2S_SAMPLE_RATE (16000)
 #define I2S_READ_LEN (16 * 1024)
 
-#define IGNORE_FIRST_N_VALUES 2
+#define IGNORE_FIRST_N_VALUES 3
+
+#define SOUND_INITIALIZE_THRESHOLD 50
+
+#define TAG "MICROPHONE"
 
 void init_i2s_mic() 
 {
@@ -65,10 +71,33 @@ void record_i2s_mic(int8_t *buffer, int num_values)
         i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
     }
 
+    // Trigger only when there is strong enough signal
+
+    ESP_LOGI(TAG, "Waiting for recording.");
+
+    int flag = 0;
+
+    while (flag != 1) {
+        i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
+
+        for (int i=0; i<bytes_read && pos < num_values; ++i) {
+            int8_t value = abs((int8_t) i2s_read_buff[i]);
+            
+            if (value > SOUND_INITIALIZE_THRESHOLD) {
+                flag = 1;
+            }
+        }
+    }
+
     // Read values
+
+    ESP_LOGI(TAG, "Recording audio");
     
     while (pos < num_values) {
+
         i2s_read(I2S_PORT, (void *)i2s_read_buff, I2S_READ_LEN, &bytes_read, portMAX_DELAY);
+
+        ESP_LOGI(TAG, "Bytes read: %d", bytes_read);
 
         for (int i=0; i<bytes_read && pos < num_values; ++i) {
             uint8_t value = (uint8_t) i2s_read_buff[i];

@@ -15,6 +15,13 @@
 #endif
 
 /**
+ * @brief Get number of MFCC features.
+ * 
+ * @return Number of MFCC features.
+*/
+size_t get_num_mfcc();
+
+/**
  * @brief Initialization of MFCC preprocessing module. Memory sizes allocated.
  * 
  * @return Error values according to ESP-IDF coding style.
