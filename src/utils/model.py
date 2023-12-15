@@ -44,7 +44,7 @@ def export_onnx(model, dir, model_name, input_size):
 def export_onnx_tf(dir, model, model_name):
     input_size = (183, 32) #FIXME - 
     spec = (tf.TensorSpec((None, input_size[0],input_size[1], 1), tf.float32, name="input"),)
-    path = os.path.join(dir, f"{model_name}_tf.onnx")
+    path = os.path.join(dir, f"{model_name}.onnx")
     tf2onnx.convert.from_keras(model, input_signature=spec, opset=13, output_path=path)
 
 

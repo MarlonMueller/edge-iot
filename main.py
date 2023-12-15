@@ -181,6 +181,7 @@ Accuracy of int8 model: 0.7635
     #  Training
     ########################################################
 
+    model_name += "_tf"
     from src.model import model_tf
     import tensorflow as tf
     from tensorflow.keras import layers, models, optimizers
@@ -210,13 +211,14 @@ Accuracy of int8 model: 0.7635
 
     train_dataloader = tf.data.Dataset.from_tensor_slices((train_inputs, train_labels)).batch(batch_size).shuffle(buffer_size=len(train_dataset))
     test_dataloader = tf.data.Dataset.from_tensor_slices((test_inputs, test_labels)).batch(batch_size).shuffle(buffer_size=len(test_dataset))
-    model = model_tf.CustomModel(input_size, num_classes=num_species + 1)
+    #model = model_tf.CustomModel(input_size, num_classes=num_species + 1)
+    model = model_tf.create_custom_model(input_size, num_classes=num_species + 1)
 
     optimizer = optimizers.Adam()
     loss_function = SparseCategoricalCrossentropy()
 
-
-    num_epochs = 50
+    """
+    num_epochs = 20
 
     training_losses = []
     testing_losses = []
@@ -261,8 +263,14 @@ Accuracy of int8 model: 0.7635
         print(f"Epoch {epoch}/{num_epochs}, Training Loss: {train_loss.numpy()}, Testing Loss: {testing_loss.numpy()}, Testing Accuracy: {testing_accuracy.numpy()}")
     
 
-    model.save_weights("model_weights.ckpt")
+    model.save("model_tf.h5")
     utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
+    model = tf.keras.models.load_model("model_tf.h5")
+    tf.saved_model.save(model, "tmp_model")
+    sys.exit(0)"""
+
+    """
+    python -m tf2onnx.convert --saved-model tmp_model --output birdnet_tf_conv.onnx --opset 13"""
 
     # batch_size = 32
 
@@ -303,14 +311,29 @@ Accuracy of int8 model: 0.7635
 
     # model = utils.load_model(model, torch_dir, model_name)
 
-    onnx_dir = os.path.join(models_dir, "onnx")
+    #input_size = (183, 32) #FIXME - 
+    ##spec = (tf.TensorSpec((None, 183, 32, 1), tf.float32, name="input"),)
+    path = os.path.join(f"{model_name}.onnx")
+    #import tf2onnx
+    #tf2onnx.convert.from_saved_model("tmp_model", path)
+    
+    #)(model, opset=13, output_path=path)
+
+
+    #model = tf.keras.models.load_model(model_tf.h5)
+    #onnx_dir = os.path.join(models_dir, "onnx")
 
     #utils.export_onnx(model, onnx_dir, model_name, input_size)
-    utils.export_onnx_tf(onnx_dir, model, model_name)
+    #utils.export_onnx_tf(onnx_dir, model, model_name)
     
-    utils.load_onnx(onnx_dir, model_name, check_graph=True)
+    
+    #utils.load_onnx(".", model_name, check_graph=True)
 
-    onnx_optimized_path = optimize.optimize_fp_model(os.path.join(onnx_dir, f"{model_name}.onnx"))
+
+    onnx_optimized_path = "birdnet_tf_conv.onnx"
+
+    model_name = "birdnet_tf_conv_optimized"
+    onnx_optimized_path = optimize.optimize_fp_model(os.path.join(".","birdnet_tf_conv.onnx"))
 
     ########################################################
     #  QUANTIZATION
@@ -329,9 +352,9 @@ Accuracy of int8 model: 0.7635
     calib_method = "minmax"
     provider = "CPUExecutionProvider"
 
-    calib_dataloader = DataLoader(test_data, batch_size=len(test_data))
+    calib_dataloader = test_dataloader
     calib_data = next(iter(calib_dataloader))[0].numpy()
-    model_proto = utils.load_onnx(onnx_dir, model_name)
+    model_proto = utils.load_onnx(".", model_name)
 
     # Calibration dataset
     calib = Calibrator(quantization_bit, granularity, calib_method)
@@ -353,6 +376,8 @@ Accuracy of int8 model: 0.7635
         )
     log = f.getvalue()
     print(log)
+
+    sys.exit(0)
 
     # Extract layer names and exponents
     pattern = r'name: \/?(?P<name>\w+)(?:\/\w+)?, (?:output_)?exponent: (?P<exponent>-?\d+)'

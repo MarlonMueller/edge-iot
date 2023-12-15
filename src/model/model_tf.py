@@ -1,37 +1,41 @@
 import tensorflow as tf
-from tensorflow.keras import layers, models
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D, ReLU, MaxPooling2D, Flatten, Dense
 
-class CustomModel(tf.keras.Model):
-    def __init__(self, input_size, num_classes):
-        super(CustomModel, self).__init__()
+def create_custom_model(input_size, num_classes):
+    print(f"Size of input: {input_size}")
+    channels, height, width = input_size
 
-        print(f"Size of input: {input_size}")
-        channels, height, width = input_size
+    model = Sequential()
 
-        # Features
-        self.conv1 = layers.Conv2D(16, kernel_size=(5, 3), strides=(3, 1), padding="valid", input_shape=(height, width, channels))  # 183,32 -> 61, 30
-        self.relu1 = layers.ReLU()
-        self.pool1 = layers.MaxPooling2D(pool_size=(2, 1), strides=(2, 1), padding="valid")  # 31, 30
-        self.conv2 = layers.Conv2D(16, kernel_size=3, strides=(1, 1), padding="valid")  # 29, 28
-        self.relu2 = layers.ReLU()
-        self.pool2 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid")  # 15, 14
-        self.conv3 = layers.Conv2D(8, kernel_size=3, strides=(1, 1), padding="valid")  # 13, 12
-        self.relu3 = layers.ReLU()
-        self.pool3 = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid")  # 7, 6
+    # Features
+    model.add(Conv2D(16, kernel_size=(5, 3), strides=(3, 1), activation="relu", padding="valid", input_shape=(height, width, channels)))  # 183,32 -> 61, 30
+    model.add(MaxPooling2D(pool_size=(2, 1), strides=(2, 1), padding="valid"))  # 31, 30
+    model.add(Conv2D(16, kernel_size=3, strides=(1, 1), activation="relu", padding="valid"))  # 29, 28
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid"))  # 15, 14
+    model.add(Conv2D(8, kernel_size=3, strides=(1, 1), activation="relu", padding="valid"))  # 13, 12
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2), padding="valid"))  # 7, 6
 
-        # Classifier
-        self.flatten = layers.Flatten()
-        self.fc1 = layers.Dense(64)
-        self.relu4 = layers.ReLU()
-        self.fc2 = layers.Dense(num_classes)
+    # Classifier
+    model.add(Flatten())
+    model.add(Dense(64, activation="relu"))
+    model.add(Dense(num_classes, activation='softmax'))
 
-    def call(self, x):
-        x = self.pool1(self.relu1(self.conv1(x)))
-        x = self.pool2(self.relu2(self.conv2(x)))
-        x = self.pool3(self.relu3(self.conv3(x)))
-        x = self.flatten(x)
-        x = self.fc2(self.relu4(self.fc1(x)))
-        output = tf.nn.softmax(x, axis=-1)
-        return output
+    return model
 
 
+"""
+model input name: conv2d_input, exponent: -15
+Reshape layer name: StatefulPartitionedCall/sequential/conv2d/BiasAdd__6, output_exponent: -15
+Conv layer name: StatefulPartitionedCall/sequential/conv2d/BiasAdd, output_exponent: -15
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d/MaxPool, output_exponent: -15
+Conv layer name: StatefulPartitionedCall/sequential/conv2d_1/BiasAdd, output_exponent: -14
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d_1/MaxPool, output_exponent: -14
+Conv layer name: StatefulPartitionedCall/sequential/conv2d_2/BiasAdd, output_exponent: -12
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d_2/MaxPool, output_exponent: -12
+Transpose layer name: StatefulPartitionedCall/sequential/max_pooling2d_2/MaxPool__28, output_exponent: -12
+Reshape layer name: StatefulPartitionedCall/sequential/flatten/Reshape, output_exponent: -12
+Gemm layer name: fused_gemm_0, output_exponent: -13
+Gemm layer name: fused_gemm_1, output_exponent: -12
+Softmax layer name: StatefulPartitionedCall/sequential/dense_1/Softmax, output_exponent: -15
+"""
