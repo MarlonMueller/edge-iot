@@ -9,7 +9,7 @@
 #include "lora/lora.h"
 
 #include "dl_tool.hpp"
-#include "birdnet_model.hpp"
+#include "birdnet_model_tf.hpp"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,6 +26,10 @@
 static uint8_t s_tx_data[MAX_TX_SIZE];
 
 static int input_exponent = -15;
+
+static const int num_frames = 183;
+static const int num_mfcc = 32;
+static int16_t model_input[num_frames * num_mfcc];
 
 extern "C" void app_main()
 {
@@ -57,81 +61,86 @@ extern "C" void app_main()
     MFCC
     ************/
 
-    for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
-    {
-        s_audio[i] = 1.0;
-    }
+    // for (size_t i = 0; i < TEST_WAV_SIZE; ++i)
+    // {
+    //     s_audio[i] = 1.0;
+    // }
 
-    int num_mfcc = get_num_mfcc();
+    // int num_mfcc = get_num_mfcc();
 
-    float **mfcc_output;
-    size_t num_frames = 0;
+    // float **mfcc_output;
+    // size_t num_frames = 0;
 
-    malloc_mfcc_module();
-    mfcc(s_audio, TEST_WAV_SIZE, &mfcc_output, &num_frames);
-    free_mfcc_module();
+    // malloc_mfcc_module();
+    // mfcc(s_audio, TEST_WAV_SIZE, &mfcc_output, &num_frames);
+    // free_mfcc_module();
 
-    // Print values
+    // // Print values
 
-    for (int i = 0; i < 5; ++i)
-    {
-        for (int j = 0; j < 5; ++j)
-        {
-            ESP_LOGI(MAIN_TAG, "MFCC output %d %d: %f", i, j, mfcc_output[i][j]);
-        }
-    }
+    // for (int i = 0; i < 5; ++i)
+    // {
+    //     for (int j = 0; j < 5; ++j)
+    //     {
+    //         ESP_LOGI(MAIN_TAG, "MFCC output %d %d: %f", i, j, mfcc_output[i][j]);
+    //     }
+    // }
 
     size_t total_elements = num_frames * num_mfcc;
-    ESP_LOGI(MAIN_TAG, "MFCC num frames: %d", num_frames);
+    // ESP_LOGI(MAIN_TAG, "MFCC num frames: %d", num_frames);
 
-    if (mfcc_output == NULL)
-    {
-        ESP_LOGE(MAIN_TAG, "MFCC output is NULL");
-    }
+    // if (mfcc_output == NULL)
+    // {
+    //     ESP_LOGE(MAIN_TAG, "MFCC output is NULL");
+    // }
 
     /**********
     DL
     ************/
 
+    for (int i = 0; i < num_frames * num_mfcc; ++i)
+    {
+        model_input[i] = (int16_t)DL_CLIP(s_audio[i] * (1 << -input_exponent), -32768, 32767);
+    }
+
     // Expected input size [1, 32, 188]
 
-    ESP_LOGI(MAIN_TAG, "Total elements: %d", num_frames);
+    // ESP_LOGI(MAIN_TAG, "Total elements: %d", num_frames);
 
-    int16_t *model_input = (int16_t *)malloc(total_elements * sizeof(int16_t *));
+    // int16_t *model_input = (int16_t *)malloc(total_elements * sizeof(int16_t *));
 
-    // TODO: cleanr implementation / code convention
-    float min_value = std::numeric_limits<float>::max();
-    float max_value = std::numeric_limits<float>::lowest();
+    // // TODO: cleanr implementation / code convention
+    // float min_value = std::numeric_limits<float>::max();
+    // float max_value = std::numeric_limits<float>::lowest();
 
     // Find min and max values
-    for (size_t i = 0; i < num_frames; ++i)
-    {
-        for (size_t j = 0; j < num_mfcc; ++j)
-        {
-            float value = mfcc_output[i][j];
-            min_value = std::min(min_value, value);
-            max_value = std::max(max_value, value);
-        }
-    }
-    ESP_LOGI(MAIN_TAG, "Min value: %f - Max value: %f", min_value, max_value);
+    // for (size_t i = 0; i < num_frames; ++i)
+    // {
+    //     for (size_t j = 0; j < num_mfcc; ++j)
+    //     {
+    //         float value = mfcc_output[i][j];
+    //         min_value = std::min(min_value, value);
+    //         max_value = std::max(max_value, value);
+    //     }
+    // }
+    // ESP_LOGI(MAIN_TAG, "Min value: %f - Max value: %f", min_value, max_value);
 
     // Normalize and clip values
 
-    if (max_value != min_value)
-    {
-        int pos = 0;
+    // if (max_value != min_value)
+    // {
+    //     int pos = 0;
 
-        for (size_t i = 0; i < num_frames && pos < total_elements; ++i)
-        {
-            for (size_t j = 0; j < num_mfcc && pos < total_elements; ++j)
-            {
-                float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
-                // ESP_LOGI(MAIN_TAG, "Normalized input: %f", normalized_input);
-                model_input[pos] = (int16_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
-                ++pos;
-            }
-        }
-    }
+    //     for (size_t i = 0; i < num_frames && pos < total_elements; ++i)
+    //     {
+    //         for (size_t j = 0; j < num_mfcc && pos < total_elements; ++j)
+    //         {
+    //             float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
+    //             // ESP_LOGI(MAIN_TAG, "Normalized input: %f", normalized_input);
+    //             model_input[pos] = (int16_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
+    //             ++pos;
+    //         }
+    //     }
+    // }
 
     // for (int i=0; i<total_elements; ++i) {
     //     ESP_LOGI(MAIN_TAG, "Model input %d:", (int) model_input[i]);
@@ -190,13 +199,13 @@ extern "C" void app_main()
     MFCC
     ************/
 
-    if (mfcc_output != NULL)
-    {
-        for (int i = 0; i < num_frames; ++i)
-        {
-            free(mfcc_output[i]);
-        }
+    // if (mfcc_output != NULL)
+    // {
+    //     for (int i = 0; i < num_frames; ++i)
+    //     {
+    //         free(mfcc_output[i]);
+    //     }
 
-        free(mfcc_output);
-    }
+    //     free(mfcc_output);
+    // }
 }
