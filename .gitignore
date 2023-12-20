@@ -17,12 +17,17 @@ data/audio/*
 !data/audio/.gitkeep
 
 
+# Virtual environments
 .venv/
 venv/
+
 build/
+
 # automatic dependences created by ESP32 IDF framework
 managed_components/
 
 dependencies.lock
 
 .DS_Store
+
+tmp/
