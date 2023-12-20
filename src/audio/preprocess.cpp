@@ -202,7 +202,7 @@ esp_err_t malloc_mfcc_module()
 }
 
 
-esp_err_t mfcc(float *wav_values, size_t num_samples, 
+esp_err_t mfcc(int8_t *wav_values, size_t num_samples, 
                float ***output, size_t *output_frames) 
 {
 
@@ -250,8 +250,8 @@ esp_err_t mfcc(float *wav_values, size_t num_samples,
         size_t ref_frame = i * HOP_LENGTH_SAMPLES;
 
         for (size_t j=0; j < WIN_LENGTH_SAMPLES; ++j) {
-            // float value = wav_values[ref_frame + j] / (float) INT8_MAX;
-            float value = wav_values[ref_frame + j];
+            float value = wav_values[ref_frame + j] / (float) INT8_MAX;
+            // float value = wav_values[ref_frame + j];
             s_fft_operand[2*j] = value * s_window[j]; // Re
             s_fft_operand[2*j + 1] = 0; // Im
         }

@@ -28,7 +28,7 @@ def mfcc(wav: np.array):
     lib.mfcc.restype = ctypes.c_int
 
     wav = np.array(wav)
-    wav_values = np.array(wav * (1 << 7), dtype=np.int8)
+    wav_values = np.round(wav * (1 << 7))
     wav_values_ptr = ctypes.cast(wav_values.ctypes.data, ctypes.POINTER(ctypes.c_int8))
 
     output_frames = ctypes.c_size_t()
