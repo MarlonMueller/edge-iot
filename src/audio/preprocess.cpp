@@ -86,6 +86,7 @@ static float *s_mel_buffer;
 // static float s_mel_filt[N_MELS][NUM_FFT / 2 + 1];
 // static float s_mel_buffer[2*N_MELS];
 
+extern "C" {
 
 // Auxiliary functions
 
@@ -337,4 +338,6 @@ esp_err_t free_mfcc_module()
     ESP_LOGI(PREPROCESS_TAG, "MFCC module freed");
 
     return ESP_OK;
+}
+
 }

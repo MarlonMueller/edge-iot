@@ -14,6 +14,8 @@
 #include "sim_dsp/aux_err.h"
 #endif
 
+extern "C" {
+
 /**
  * @brief Get number of MFCC features.
  * 
@@ -57,3 +59,5 @@ esp_err_t mfcc(int8_t *wav_values, size_t num_samples,
  * @return ESP_OK if success, otherwise undetermined.
 */
 esp_err_t free_mfcc_module();
+
+}
