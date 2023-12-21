@@ -6,15 +6,12 @@
 # This file provides the functions for preprocessing audio files.
 # 
 # IMPORTANT: 
-# In order to use this project in this file, compile the C library with
-# the following command:
-#   gcc -x c -o src/audio/preprocess.so -D RUN_PC -shared -fPIC -I include/ src/audio/preprocess.cpp -lm
+# Before using this program, follow the instructions in src/audio/setup.py
 
 import numpy as np
 import matplotlib.pyplot as plt
 import librosa
 import ctypes # for C library usage
-
 
 # Functions
 
@@ -22,7 +19,7 @@ def mfcc(wav: np.array):
 
     # Calculate data from C library
 
-    lib = ctypes.CDLL('./src/audio/preprocess.so') 
+    lib = ctypes.CDLL('build/lib.linux-x86_64-3.10/preprocess.cpython-310-x86_64-linux-gnu.so') # Change this line to the path of the C library
 
     lib.mfcc.argtypes = [ctypes.POINTER(ctypes.c_int8), ctypes.c_size_t, ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))), ctypes.POINTER(ctypes.c_size_t)]
     lib.mfcc.restype = ctypes.c_int
