@@ -22,6 +22,8 @@ static const char *TAG = "WIFI";
 #define SSID ""
 #define PASS ""
 
+static int num_retries = 0;
+
 static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT)
@@ -34,9 +36,17 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
             esp_wifi_connect();
             break;
         case WIFI_EVENT_STA_DISCONNECTED:
-            ESP_LOGI(TAG, "Disconnected from %s", SSID);
-            esp_wifi_connect();
-            xEventGroupSetBits(event_group, WIFI_FAIL);
+            if (num_retries < 3)
+            {
+                ESP_LOGI(TAG, "Retrying connecting to %s...", SSID);
+                esp_wifi_connect();
+                num_retries++;
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Disconnected from %s", SSID);
+                xEventGroupSetBits(event_group, WIFI_FAIL);
+            }
             break;
         default:
             break;
