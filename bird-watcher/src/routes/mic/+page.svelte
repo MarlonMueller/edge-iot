@@ -80,16 +80,6 @@
 			sampleRate: 44100
 		});
 		connected = true;
-		// const WS_URL = 'ws:///localhost:5173';
-		// const ws = new WebSocket(WS_URL);
-		// ws.binaryType = 'arraybuffer';
-
-		// ws.addEventListener('message', (event) => {
-		// 	if (continueBtn.disabled) {
-		// 		player.feed(event.data);
-		// 		worker.postMessage(event.data);
-		// 	}
-		// });
 	}
 
 	function changeVolume(e) {

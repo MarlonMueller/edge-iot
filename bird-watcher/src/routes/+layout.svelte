@@ -14,16 +14,3 @@
 </TabGroup>
 
 <slot />
-<!-- <script>
-	import { io } from 'socket.io-client';
-
-	const socket = io();
-	$: messageFromWebsocket = '';
-	socket.on('connect', () => {
-		console.log('Connected with socket ID: ' + socket.id);
-	});
-	socket.on('message', (data) => {
-		messageFromWebsocket = message;
-		console.log(message);
-	});
-</script> -->
