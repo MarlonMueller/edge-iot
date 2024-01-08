@@ -19,8 +19,11 @@ set(include_dirs
 )
 
 set(requires
+        esp_led
+        wifi
         audio
         esp-dl
+        websocket
 )
 
 idf_component_register(
