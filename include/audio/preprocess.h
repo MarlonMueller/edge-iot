@@ -49,7 +49,7 @@ esp_err_t malloc_mfcc_module();
  * 
  * @return Error values according to ESP-IDF coding style.
 */
-esp_err_t mfcc(int8_t *wav_values, size_t num_samples, 
+esp_err_t mfcc(int16_t *wav_values, size_t num_samples, 
                float ***output, size_t *output_frames);
 
 

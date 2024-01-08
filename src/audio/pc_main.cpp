@@ -10,7 +10,7 @@
 
 #define TEST_WAV_SIZE 48000
 
-int8_t audio[TEST_WAV_SIZE];
+int16_t audio[TEST_WAV_SIZE];
 
 int main() {
     printf("Starting application");
