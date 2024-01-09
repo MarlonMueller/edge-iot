@@ -7,6 +7,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include "esp_log.h"
+#include "esp_led/esp_led.h"
 
 #include "driver/i2s.h"
 
@@ -57,6 +58,8 @@ esp_err_t read_i2s_mic(int16_t *buffer, size_t samples)
      * Note: I2S reads 32-bit samples, but microphone is 24-bit.
      * We read the upper 16 bits and discard the rest (noise and padding).
      */
+
+    set_esp_led_rgb(100, 0, 0);
 
     char *buf_ptr = (char *)buffer;
     int32_t *rx_buff = (int32_t *)malloc(BUFFER_SIZE * sizeof(int32_t));

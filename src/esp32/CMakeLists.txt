@@ -2,7 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs
         main.cpp
-        ../model/birdnet_coefficient.cpp
+        # ../model/birdnet_tf_conv_optimized_coefficient.cpp
 )
 
 set(src_dirs        
@@ -22,7 +22,7 @@ set(requires
         esp_led
         wifi
         audio
-        esp-dl
+        # esp-dl
         websocket
 )
 
