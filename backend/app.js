@@ -1,6 +1,9 @@
 /**
  * Module dependencies.
  */
+
+const path = require('path');
+const WebSocket = require('ws');
 const express = require('express');
 const bodyParser = require('body-parser');
 const errorHandler = require('errorhandler');
@@ -13,6 +16,31 @@ const { bootstrap } = require('./middleware/bootstrap');
 const { explore } = require('./middleware/autoRouter');
 const { requestHandler } = require('./helpers/requestHandler');
 
+
+//SET UP WEBSOCKET
+const WS_PORT = process.env.WS_PORT || 8888;
+
+const wsServer = new WebSocket.Server({ port: WS_PORT }, () =>
+  console.log(`WS server is listening at ws://localhost:${WS_PORT}`)
+);
+// array of connected websocket clients
+let connectedClients = [];
+
+wsServer.on("connection", (ws, req) => {
+  console.log("Connected");
+  // add new connected client
+  connectedClients.push(ws);
+  // listen for messages from the streamer, the clients will not send anything so we don't need to filter
+  ws.on("message", (data) => {
+    connectedClients.forEach((ws, i) => {
+      if (ws.readyState === ws.OPEN) {
+        ws.send(data);
+      } else {
+        connectedClients.splice(i, 1);
+      }
+    });
+  });
+});
 /**
  * Load environment variables from .env file, where API keys and passwords are configured.
  */
@@ -48,16 +76,8 @@ mongoose
  */
 app.set('port', process.env.PORT || 8080);
 
-// app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// A CSRF token is a secure random token (e.g., synchronizer token or challenge token) that is used to prevent CSRF attacks.
-// The token needs to be unique per user session and should be of large random value to make it difficult to guess.
-// A CSRF secure application assigns a unique CSRF token for every user session
-
-// app.use((req, res, next) => {
-//   lusca.csrf()(req, res, next);
-// });
 
 app.use(lusca.xframe('SAMEORIGIN'));
 app.use(lusca.xssProtection(true));
@@ -79,6 +99,11 @@ bootstrap();
 app.get('/', (_, res) => {
   res.send('Welcome to the Bird Watcher backend');
 });
+app.use("/image", express.static("image"));
+app.use("/js", express.static("js"));
+app.get("/audio", (req, res) =>
+  res.sendFile(path.resolve(__dirname, "./audio_client.html"))
+);
 // /explore shows all possible routes/endpoints of the backend
 app.post('/explore', async (req, res) => {
   const routes = await explore(req);
@@ -105,6 +130,7 @@ if (process.env.NODE_ENV === 'development') {
  */
 app.listen(app.get('port'), () => {
   console.log(`App is running on http://localhost:${app.get('port')} in ${app.get('env')} mode`);
+  console.log(`Recordings page at http://localhost:${app.get('port')}/audio`);
   console.log('Press CTRL-C to stop');
 });
 module.exports = app;
