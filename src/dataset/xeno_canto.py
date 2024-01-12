@@ -2,6 +2,7 @@ from typing import Dict, List
 
 import os
 import csv
+import pathlib
 import asyncio
 import warnings
 from PIL import Image
@@ -15,21 +16,44 @@ import matplotlib.pyplot as plt
 
 from src import utils
 
-
-"""
-API documentation:
-https://xeno-canto.org/explore/api
-https://xeno-canto.org/help/search
-"""
+import logging
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logger = logging.getLogger(__name__)
 
 
 API_URL = "https://xeno-canto.org/api/2/recordings"
 
+def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir: pathlib.Path, annotation_path: pathlib.Path):
+    """Use xeno-canto interface to async. download bird audio files and create annotation file
+
+    :param query: xeno-canto query
+    :param num_species: top-k species to download
+    :param audio_dir: audio directory
+    :param annotation_path: annotation file path
+    :return: map of species names to numeric values
+    """
+    
+    logger.info("Downloading Xeno-Canto audio files ...")
+    
+    # Query xeno-canto API
+    page = get_composite_page(query)
+    # xeno_canto.plot_distribution(page, threshold=0)
+    
+    # Filter top-k species
+    page = filter_top_k_species(page, k=num_species)
+    #xeno_canto.plot_distribution(page, threshold=0)
+    
+    species_map = asyncio.run(
+      get_page_audio(page, audio_dir, annotation_path)
+    )
+    
+    return species_map
 
 @dataclass
 class Page:
-
-    """Dataclass for a page of recordings from the Xeno-Canto API"""
+    
+    """Dataclass for a page of recordings from the Xeno-Canto API."""
 
     numRecordings: int
     numSpecies: int
@@ -42,12 +66,17 @@ class Page:
 
 
 def get_page(query: Dict[str, str], page: int = 1) -> Page:
-    """Get a page of recordings from the Xeno-Canto API"""
+    """Get a page of recordings from the Xeno-Canto API
+
+    :param query: xeno-canto query
+    :param page: page number, defaults to 1
+    :return: page of recordings
+    """
 
     # Set query and params
     query = " ".join([f"{k}:{v}" for k, v in query.items()])
     params = {"query": query, "page": page}
-    print("Query:", params)
+    logger.info(f"Query: {params}")
 
     response = httpx.get(API_URL, params=params).raise_for_status().json()
 
@@ -63,7 +92,11 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
 
 
 def get_composite_page(query: Dict[str, str]) -> Page:
-    """Get a composite page of recordings from the Xeno-Canto API"""
+    """Get combined pages of recordings from the Xeno-Canto API
+
+    :param query: xenocanto query
+    :return: combined page of recordings
+    """
 
     # Fetch first page
     composite_page = get_page(query, page=1)
@@ -87,13 +120,17 @@ def get_composite_page(query: Dict[str, str]) -> Page:
         composite_page.numRecordings
     ), "totalRecordings do not add up"
     composite_page.numPages = 1
-
-    print(composite_page)
+    
+    logger.info(f"Raw page: {composite_page}")
     return composite_page
 
 
 async def _get_audio(url: str, path: str):
-    """Download audio file from url to path"""
+    """Download audio file from url to path
+
+    :param url: URL of audio file
+    :param path: path to save audio file
+    """
 
     async with httpx.AsyncClient() as client:
         response = None
@@ -111,32 +148,45 @@ async def _get_audio(url: str, path: str):
 
 
 async def _download_audio(
-    id,
-    page,
-    species_map,
-    audio_dir,
-    annotation_path,
-    columns,
+    id_: str,
+    page:Page,
+    species_map: Dict[str, int],
+    audio_dir: pathlib.Path,
+    annotation_path : pathlib.Path,
+    columns : List[str],
     semaphore,
     progress_bar,
     num_errors,
     lock,
 ):
-    """Download audio file and document in annotation file"""
+    """Download audio file from xeno-canto and document in annotation file.
+
+    :param id_: xeno-canto recording id
+    :param page: page of recordings
+    :param species_map: map of species names to numeric values
+    :param audio_dir: audio directory
+    :param annotation_path: annotation file path
+    :param columns: csv columns
+    :param semaphore: shared semaphore
+    :param progress_bar: progress bar
+    :param num_errors: shared counter
+    :param lock: shared lock 
+    :raises ValueError: if file is not .mp3 or .wav
+    """
 
     async with semaphore:
         try:
             # Extract species name from 'en' field and map to numeric value
-            cls_str = page.recordings.loc[id].en
+            cls_str = page.recordings.loc[id_].en
             cls_id = species_map[cls_str]
 
             # Get file names
-            file_name = page.recordings.loc[id]["file-name"]
+            file_name = page.recordings.loc[id_]["file-name"]
 
             if ".mp3" in file_name:
-                file_name = f"x-{id}-{cls_id}-0.mp3"
+                file_name = f"x-{id_}-{cls_id}-0.mp3"
             elif ".wav" in file_name:
-                file_name = f"x-{id}-{cls_id}-0.wav"
+                file_name = f"x-{id_}-{cls_id}-0.wav"
             else:
                 raise ValueError(f"{file_name} not .mp3 or .wav")
 
@@ -144,7 +194,7 @@ async def _download_audio(
             if not os.path.isfile(audio_path):
                 await asyncio.create_task(
                     _get_audio(
-                        page.recordings.loc[id]["file"],
+                        page.recordings.loc[id_]["file"],
                         audio_path,
                     )
                 )
@@ -155,27 +205,36 @@ async def _download_audio(
                         writer = csv.DictWriter(file, fieldnames=columns)
                         writer.writerow(
                             {
+                                "idx": "",
                                 "file_name": file_name,
                                 "class_id": cls_id,
                                 "class": cls_str,
-                                "xeno_id": id,
+                                "xeno_id": id_,
                                 "slice": 0,
-                                "quality": page.recordings.loc[id]["q"],
-                                "length": page.recordings.loc[id]["length"],
-                                "sampling_rate": page.recordings.loc[id]["smp"],
+                                "quality": page.recordings.loc[id_]["q"],
+                                "length": page.recordings.loc[id_]["length"],
+                                "sampling_rate": page.recordings.loc[id_]["smp"],
                             }
                         )
+                
 
         except (httpx.HTTPError, ValueError) as e:
-            print(f"Error downloading {id}: {str(e)}")
+            logger.debug(f"Error downloading {id_}: {str(e)}")
             await num_errors.increment()
 
         finally:
-            progress_bar.update(1)
+            if progress_bar is not None:
+                progress_bar.update(1)
 
 
 def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -> Page:
-    """Filter page to only include top k species"""
+    """Filter page to top-k species
+
+    :param page: page of recordings
+    :param k: defaults to 5
+    :param exclude_unknown: exclude 'identity_unknown' from top-k species, defaults to True
+    :return: filtered page of recordings
+    """
 
     df = page.recordings
 
@@ -186,20 +245,22 @@ def filter_top_k_species(page: Page, k: int = 5, exclude_unknown: bool = True) -
 
     top_species = species_counts[:k]
     top_species = top_species.index
-    print(f"Top {k} species:", top_species)
 
     page.recordings = page.recordings[page.recordings["en"].isin(top_species)]
     page.numRecordings = len(page.recordings)
     page.numSpecies = len(top_species)
-    print(f"Filtered page: {page}")
+    logger.info(f"Filtered page: {page}")
     return page
 
 
 def get_numeric_species_map(page: Page):
-    """Get a map of species names to numeric values"""
+    """Get map of species names to numeric values
+
+    :param page: page of recordings
+    :return: map of species names to numeric values
+    """
     species_names = page.recordings["en"].unique()
     species_map = {name: i for i, name in enumerate(species_names)}
-    print("Species map:", species_map)
     return species_map
 
 
@@ -209,17 +270,13 @@ async def get_page_audio(
     annotation_path: str,
     ids: List[str] = None,
 ) -> Dict[str, int]:
-    """Download audio files from page to audio_dir and creates a annotation file at annotation_path.
+    """Download audio files from page and document in annotation file
 
-    numeric_species_map: map of bird species name to numeric value
-    ids: list of recording ids to download
-
-    Format: x-[x_id]-[cls_id]-[slice].{mp3/wav}
-
-    x_id: Xeno-Canto recording id
-    cls_id: numeric species id
-    slice: 0 (fix)
-
+    :param page: page of recordings
+    :param audio_dir: audio directory
+    :param annotation_path: annotation file path
+    :param ids: xeno-canto recording ids, defaults to None
+    :return: map of species names to numeric values
     """
     os.makedirs(audio_dir, exist_ok=True)
 
@@ -231,6 +288,7 @@ async def get_page_audio(
 
     # Create annotation file
     columns = [
+        "idx",
         "file_name",
         "class_id",
         "class",
@@ -250,19 +308,21 @@ async def get_page_audio(
     semaphore = asyncio.Semaphore(5)
 
     total_downloads = len(ids)
-    progress_bar = tqdm(total=total_downloads, unit="download", dynamic_ncols=True)
+    
+    progress_bar = None
+    # progress_bar = tqdm(total=total_downloads, unit="download", dynamic_ncols=True)
 
-    for id in ids:
+    for id_ in ids:
         task = asyncio.create_task(
             _download_audio(
-                id,
+                id_,
                 page,
                 species_map,
                 audio_dir,
                 annotation_path,
                 columns,
                 semaphore,
-                progress_bar,
+                None, # progress_bar,
                 num_errors,
                 lock,
             )
@@ -270,33 +330,58 @@ async def get_page_audio(
         tasks.append(task)
 
     await asyncio.gather(*tasks)
+    
+    if progress_bar is not None:
+        progress_bar.close()
 
-    progress_bar.close()
-
-    print(f"Attempted {total_downloads} downloads, {num_errors.value()} failed")
+    logger.debug(f"Attempted {total_downloads} downloads, {num_errors.value()} failed")
     return species_map
 
 
 def get_field(page: Page, id: str, field: str, prefix=True):
+    """Get a field from a page of recordings
+
+    :param page: page of recordings
+    :param id: xeno-canto recording id
+    :param field: field name
+    :param prefix: add https prefix to url, defaults to True
+    :return: httpx response
+    """
     url = page.recordings.loc[id][field]
     url = f"https:{url}" if prefix else url
     return httpx.get(url).raise_for_status()
 
 
 def plot_sono(page: Page, id: str, version: str = "small"):
+    """Plot the sonogram of a recording
+
+    :param page: page of recordings
+    :param id: xenocanto recording id
+    :param version: sonogram version, defaults to "small"
+    """
     field = "sono." + version
     response = get_field(page, id, field)
     utils.plot_image(Image.open(BytesIO(response.content)))
 
 
 def plot_osci(page: Page, id: str, version: str = "small"):
+    """Plot the oscillogram of a recording
+
+    :param page: page of recordings
+    :param id: xenocanto recording id
+    :param version: oscillogram version, defaults to "small"
+    """
     field = "osci." + version
     response = get_field(page, id, field)
     utils.plot_image(Image.open(BytesIO(response.content)))
 
 
 def plot_distribution(page: Page, threshold: int = 5):
-    """Plot the distribution of bird species in a page of recordings"""
+    """Plot the distribution of bird species
+
+    :param page: page of recordings
+    :param threshold: minimum percentage of species to plot, defaults to 5
+    """
 
     df = page.recordings
     total_bird_observations = len(df)

@@ -2,8 +2,7 @@ import asyncio
 
 
 class Counter:
-
-    """A race-condition-safe counter."""
+    """A thread-safe counter."""
 
     def __init__(self):
         self._value = 0
