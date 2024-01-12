@@ -1,11 +1,15 @@
 import logging
 
+import io
+import sys
 import librosa
 import pathlib
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 import os
+from onnx import checker
+from contextlib import redirect_stdout
 
 from matplotlib import pyplot as plt
 
@@ -48,9 +52,9 @@ def download_audio():
 
     query = {
         "grp": "1",
-        "area": "europe",
-        "cnt": "germany",
-        "len": "5",
+        #"area": "europe",
+        # "cnt": "brazil",
+        "len": "4-6",
         # "q": "A",
         # "lic": "cc",
         # "box": "LAT_MIN,LON_MIN,LAT_MAX,LON_MAX",
@@ -158,10 +162,11 @@ if __name__ == "__main__":
     # plot_metrics(history)
     # confusion(birdnet_model, train_dataset, test_dataset)
     
+
     tf_model_path = str(MODEL_DIR / "tf_birdnet")
     onnx_model_path = str(MODEL_DIR / "onnx_birdnet" / "birdnet.onnx")
     
-    birdnet_model.load_weights(CHECKPOINT_DIR / "8.ckpt")
+    birdnet_model.load_weights(CHECKPOINT_DIR / "20.ckpt")
     tf.saved_model.save(birdnet_model, tf_model_path)
     
     os.system(f"python -m tf2onnx.convert --saved-model {tf_model_path} --output {onnx_model_path} --opset 13")
@@ -176,12 +181,13 @@ if __name__ == "__main__":
     granularity = "per-tensor"
     calib_method = "minmax"
     provider = "CPUExecutionProvider"
+
+    calib_data = []
+    for (data, labels) in test_dataset.as_numpy_iterator():
+        calib_data.append(data)
+
+    calib_data = np.concatenate(calib_data, axis=0)
     
-    #TODO - 
-    calib_dataloader = test_dataloader
-    calib_data = next(iter(calib_dataloader))[0].numpy()
-    
-    path = os.path.join(dir, f"birdnet_optimized.onnx")
     optimized_model_path =  MODEL_DIR / "onnx_birdnet" / "birdnet_optimized.onnx"
     model_proto = onnx.load_model(optimized_model_path)
     checker.check_graph(model_proto.graph)    
@@ -189,9 +195,9 @@ if __name__ == "__main__":
     calib = Calibrator(quantization_bit, granularity, calib_method)
     calib.set_providers([provider])
     
-    cpp_file_name = f"birdnet_coefficient"
+    cpp_file_name = "birdnet_coefficient"
     quantization_params_path = os.path.join(
-        CPP_MODEL_DIR, f"birdnet_quantization_params.pickle"
+        CPP_MODEL_DIR, "birdnet_quantization_params.pickle"
     )
     
     calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
@@ -199,7 +205,7 @@ if __name__ == "__main__":
     f = io.StringIO()
     with redirect_stdout(f):
         calib.export_coefficient_to_cpp(
-            model_proto, quantization_params_path, target_chip, CPP_MODEL_DIR, cpp_file_name, True
+            model_proto, quantization_params_path, target_chip, str(CPP_MODEL_DIR), cpp_file_name, True
         )
     log = f.getvalue()
     print(log)
