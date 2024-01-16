@@ -1,28 +1,30 @@
-.vscode/
-
 *.h5
 *.pyc 
+.vscode/
 .DS_Store
+ignore/
 
+# Intermediate models
 model/onnx_birdnet/*
 model/tf_birdnet/*
 !models/onnx_birdnet/.gitkeep
 !models/tf_birdnet/.gitkeep
 
-
+# Data
 data/*
 !data/audio
 data/audio/*
 !data/audio/.gitkeep
 
-
 # Virtual environments
 .venv/
 venv/
 
+# Build
 build/
-ignore/
 
-# Dependences created by ESP32 IDF framework
+# ESP IDF
 managed_components/
 dependencies.lock
+sdkconfig
+sdkconfig.old
