@@ -23,7 +23,12 @@ venv/
 # Build
 build/
 
+# Heap
+trace/
+heaptrace-gdbinit
+
 # ESP IDF
+partition_table/
 managed_components/
 dependencies.lock
 sdkconfig
