@@ -27,13 +27,15 @@ PATH = pathlib.Path(__file__).parent.resolve()
 DURATION = 5
 NUM_SPECIES = 3
 SAMPLE_RATE = 16000
+
+MODEL_NAME = "birdnet_default"
+
 DATA_DIR = PATH / "data"
 AUDIO_DIR = DATA_DIR / "audio"
 ANNOTATION_PATH = DATA_DIR / "annotation.csv"
 
-MODEL_DIR = PATH / "model"
-CPP_MODEL_DIR = PATH / "src" / "model"
-
+MODEL_DIR = PATH / "src" / "model"
+TEMPLATE_DIR = PATH / "src" / "templates"
 CHECKPOINT_DIR = MODEL_DIR / "checkpoints"
 
 H5FILE = "audio_preprocessed.h5"
@@ -150,21 +152,24 @@ if __name__ == "__main__":
     #     plt.tight_layout()
 
     #     plt.show()
+        
 
     mfcc_example = audio_processing.load_data([0], DATA_DIR / H5FILE)
     mfcc_shape = mfcc_example.squeeze().shape
     train_dataset, test_dataset = tensorflow.get_dataset(DATA_DIR, ANNOTATION_PATH, H5FILE, mfcc_shape)   
-        
-    birdnet_model = birdnet.birdnet_model(mfcc_shape, NUM_SPECIES + 1)
+    
+    birdnet_model = birdnet.birdnet_model(mfcc_shape, NUM_SPECIES + 1, MODEL_NAME)
     birdnet_model.summary()
+    
+    print(get_layer_info(birdnet_model))
     
     # _, history = tensorflow.train_model(birdnet_model, train_dataset, test_dataset, CHECKPOINT_DIR)
     # plot_metrics(history)
     # confusion(birdnet_model, train_dataset, test_dataset)
     
 
-    tf_model_path = str(MODEL_DIR / "tf_birdnet")
-    onnx_model_path = str(MODEL_DIR / "onnx_birdnet" / "birdnet.onnx")
+    """tf_model_path = str(MODEL_DIR / "tf_birdnet" / f"{MODEL_NAME}")
+    onnx_model_path = str(MODEL_DIR / "onnx_birdnet" / f"{MODEL_NAME}.onnx")
     
     birdnet_model.load_weights(CHECKPOINT_DIR / "20.ckpt")
     tf.saved_model.save(birdnet_model, tf_model_path)
@@ -172,7 +177,7 @@ if __name__ == "__main__":
     os.system(f"python -m tf2onnx.convert --saved-model {tf_model_path} --output {onnx_model_path} --opset 13")
     onnx_optimized_path = optimize.optimize_fp_model(onnx_model_path)
     
-    sys.path.append(os.path.join(PATH, "src", "procedures", "calibrate", "linux"))
+    sys.path.append(PATH / "src" / "procedures" / "calibrate" / "linux"))
     from calibrator import *
     from evaluator import *
 
@@ -188,7 +193,7 @@ if __name__ == "__main__":
 
     calib_data = np.concatenate(calib_data, axis=0)
     
-    optimized_model_path =  MODEL_DIR / "onnx_birdnet" / "birdnet_optimized.onnx"
+    optimized_model_path =  MODEL_DIR / "onnx_birdnet" / f"{MODEL_NAME}_optimized.onnx"
     model_proto = onnx.load_model(optimized_model_path)
     checker.check_graph(model_proto.graph)    
     
@@ -196,19 +201,17 @@ if __name__ == "__main__":
     calib.set_providers([provider])
     
     cpp_file_name = "birdnet_coefficient"
-    quantization_params_path = os.path.join(
-        CPP_MODEL_DIR, "birdnet_quantization_params.pickle"
-    )
+    quantization_params_path = MODEL_DIR / f"{MODEL_NAME}_quantization_params.pickle"
     
     calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
 
     f = io.StringIO()
     with redirect_stdout(f):
         calib.export_coefficient_to_cpp(
-            model_proto, quantization_params_path, target_chip, str(CPP_MODEL_DIR), cpp_file_name, True
+            model_proto, quantization_params_path, target_chip, str(MODEL_DIR), cpp_file_name, True
         )
     log = f.getvalue()
-    print(log)
+    print(log)"""
     
     
     """
