@@ -7,7 +7,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include "esp_log.h"
-#include "esp_led/esp_led.h"
 
 #include "driver/i2s.h"
 
@@ -44,7 +43,7 @@ void init_i2s_mic(uint32_t sample_rate)
         .data_in_num = SD_PIN,
     };
 
-    // SPH0645 (not tested)
+    // SPH0645(?)
     // REG_SET_BIT(I2S_RX_TIMING_REG(I2S_PORT), BIT(1)); // Delay by falling edge
     // REG_SET_BIT(I2S_RX_CONF1_REG(I2S_PORT), I2S_RX_MSB_SHIFT); // Philips mode
 
@@ -58,8 +57,6 @@ esp_err_t read_i2s_mic(int16_t *buffer, size_t samples)
      * Note: I2S reads 32-bit samples, but microphone is 24-bit.
      * We read the upper 16 bits and discard the rest (noise and padding).
      */
-
-    set_esp_led_rgb(100, 0, 0);
 
     char *buf_ptr = (char *)buffer;
     int32_t *rx_buff = (int32_t *)malloc(BUFFER_SIZE * sizeof(int32_t));
