@@ -5,10 +5,14 @@
 ignore/
 
 # Intermediate models
-model/onnx_birdnet/*
-model/tf_birdnet/*
-!models/onnx_birdnet/.gitkeep
-!models/tf_birdnet/.gitkeep
+src/model/checkpoints/*
+src/model/onnx_birdnet/*
+src/model/tf_birdnet/*
+src/model/quantization_params/*
+!src/model/checkpoints/.gitkeep
+!src/model/onnx_birdnet/.gitkeep
+!src/model/tf_birdnet/.gitkeep
+!src/model/quantization_params/.gitkeep
 
 # Data
 data/*

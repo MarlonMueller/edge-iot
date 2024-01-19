@@ -10,6 +10,7 @@ from io import BytesIO
 from dataclasses import dataclass
 
 import httpx
+import asyncio
 import pandas as pd
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -23,6 +24,21 @@ logger = logging.getLogger(__name__)
 
 
 API_URL = "https://xeno-canto.org/api/2/recordings"
+
+class Counter:
+    """A thread-safe counter."""
+
+    def __init__(self):
+        self._value = 0
+        self._lock = asyncio.Lock()
+
+    async def increment(self):
+        async with self._lock:
+            self._value += 1
+
+    def value(self):
+        return self._value
+
 
 def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir: pathlib.Path, annotation_path: pathlib.Path):
     """Use xeno-canto interface to async. download bird audio files and create annotation file
@@ -304,7 +320,7 @@ async def get_page_audio(
 
     tasks = []
     lock = asyncio.Lock()
-    num_errors = utils.Counter()
+    num_errors = Counter()
     semaphore = asyncio.Semaphore(5)
 
     total_downloads = len(ids)

@@ -24,7 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Path to C library
-CDLL = "build/lib.macosx-10.9-x86_64-cpython-38/preprocess.cpython-38-darwin.so"
+# CDLL = "build/lib.macosx-10.9-x86_64-cpython-38/preprocess.cpython-38-darwin.so"
+CDLL = "build/lib.linux-x86_64-cpython-38/preprocess.cpython-38-x86_64-linux-gnu.so"
 # CDLL = "build/lib.linux-x86_64-3.10/preprocess.cpython-310-x86_64-linux-gnu.so"
 
 

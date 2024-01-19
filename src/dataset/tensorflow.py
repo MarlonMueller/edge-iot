@@ -56,10 +56,10 @@ def get_dataset(data_dir: pathlib.Path, annotation_path: pathlib.Path, h5file:st
     logger.info(f"Train dataset size: {train_size}")
     logger.info(f"Test dataset size: {test_size}")
     
-    return train_dataset, test_dataset
+    return train_dataset, test_dataset, train_size, test_size
 
 
-def train_model(model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dataset, checkpoint_dir:pathlib.Path, num_epochs:int=20, batch_size:int=32):
+def train_model(model_dir, model_name, model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dataset, num_epochs:int=20, batch_size:int=32):
     """Train the model.
 
     :param model: tensorflow model
@@ -70,6 +70,9 @@ def train_model(model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dat
     :param batch_size: batch_size, defaults to 16
     :return: trained model and history
     """
+
+    checkpoint_dir = model_dir  / "checkpoints" / model_name
+    checkpoint_dir.mkdir(exist_ok=True)
     
     for file in checkpoint_dir.glob("*"):
         file.unlink()
@@ -82,7 +85,7 @@ def train_model(model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dat
         loss=loss_fn,
         metrics=[metrics.SparseCategoricalAccuracy()]
     )
-    
+
     checkpoint_path = checkpoint_dir / "{epoch}.ckpt"
 
     tf_callbacks = [

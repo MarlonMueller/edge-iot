@@ -1,439 +1,205 @@
-# TODO - no main.py
+import logging
 
-import sys
 import os
-import torch
-import pathlib
-import asyncio
-import pickle
 import io
-import re
+import sys
+import librosa
+import pathlib
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from onnx import checker
 from contextlib import redirect_stdout
-from torchvision import transforms
-from torch.utils.data import DataLoader
-from src.interface import xeno_canto, esc50
-from src.dataset import BirdDataset
-from src.model import CustomModel
-from src import procedures, model, utils
-from src.procedures import optimize
-import torch.optim as optim
+
+from matplotlib import pyplot as plt
+
+from src.templates import template_constructor
+from src.quantization import quantization
+from src.dataset import xeno_canto, esc50, tensorflow
+from src.audio import audio_processing
+from src.model import birdnet
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 PATH = pathlib.Path(__file__).parent.resolve()
 
+DURATION = 5
+NUM_SPECIES = 3
+SAMPLE_RATE = 16000
+
+MODEL_NAME = "birdnet_default"
+
+DATA_DIR = PATH / "data"
+AUDIO_DIR = DATA_DIR / "audio"
+ANNOTATION_PATH = DATA_DIR / "annotation.csv"
+
+MODEL_DIR = PATH / "src" / "model"
+TEMPLATE_DIR = PATH / "src" / "templates"
+
+H5FILE = "audio_preprocessed.h5"
+
+
+def download_audio():
+    """Download audio files and generate annotation files.
+    This can take a while, e.g., depending on the query.
+    By default, existing files are not downloaded again.
+    """
+
+    # https://xeno-canto.org/explore/api
+
+    query = {
+        "grp": "1",
+        #"area": "europe",
+        # "cnt": "brazil",
+        "len": "4-6",
+        # "q": "A",
+        # "lic": "cc",
+        # "box": "LAT_MIN,LON_MIN,LAT_MAX,LON_MAX",
+        # "smp": "1",
+        # "since": "2021-07-01",
+    }
+
+    if not os.listdir(AUDIO_DIR):
+        
+        if os.path.isfile(ANNOTATION_PATH):
+            logger.info("Removing existing annotation file.")
+            os.remove(ANNOTATION_PATH)
+            
+        if os.path.isfile(DATA_DIR / H5FILE):
+            logger.info("Removing existing h5 file.")
+            os.remove(DATA_DIR / H5FILE)
+    
+        species_map = xeno_canto.download_xeno_canto_audio(
+            query, NUM_SPECIES, AUDIO_DIR, ANNOTATION_PATH
+        )
+
+        esc50.download_esc50_audio(
+            NUM_SPECIES, DATA_DIR, AUDIO_DIR, ANNOTATION_PATH
+        )
+        species_map["other"] = NUM_SPECIES
+        
+        # Index annotation file
+        df = pd.read_csv(ANNOTATION_PATH)
+        df = df.sample(frac=1).reset_index(drop=True)
+        for idx, row in df.iterrows():
+            df.loc[idx, "idx"] = str(idx)
+        df.to_csv(ANNOTATION_PATH, index=False)
+        
+        logger.info(f"Species map: {species_map}")
+        
+    else:
+        logger.info("Audio files already downloaded.")
+    
+
+####
+
+def plot_metrics(history):
+
+    metrics = [metric for metric in history.history.keys() if not metric.startswith('val_')]
+
+    plt.figure(figsize=(15, len(metrics) * 4))
+
+    for i, metric in enumerate(metrics, 1):
+        plt.subplot(len(metrics), 2, i)
+        plt.plot(history.history[metric], label=f'Train {metric}')
+        plt.plot(history.history[f'val_{metric}'], label=f'Validation {metric}')
+        plt.title(f'Model {metric}')
+        plt.xlabel('Epoch')
+        plt.ylabel(metric)
+        plt.legend(loc='upper left')
+
+    plt.tight_layout()
+    plt.show()
+
+
+def confusion(model, train_dataset, test_dataset):
+    
+    from sklearn.metrics import confusion_matrix
+    for dataset in (train_dataset, test_dataset):
+        y_true = np.concatenate([y.numpy() for _, y in dataset])
+        y_pred_probs = model.predict(dataset)
+        y_pred = np.argmax(y_pred_probs, axis=1)
+        conf_matrix = confusion_matrix(y_true, y_pred)
+        print(conf_matrix)
+
+    plt.show()
+
+####
+
 
 if __name__ == "__main__":
-
-    """
-
-    DATASET SIZE: approx. 800 bird, 1400 non-bird
-    BIRDS: water_rail, common_moorhen, s_warbler
-
-Size of input: torch.Size([1, 32, 188])
-x.size(): torch.Size([1, 8, 6, 7])
-Feature size: 336
-
-precision    recall  f1-score   support
-
-           0       0.88      0.56      0.68        68
-           1       0.79      0.62      0.70        80
-           2       0.92      0.78      0.85        60
-           3       0.86      0.99      0.92       346
-
-    accuracy                           0.86       554
-   macro avg       0.87      0.74      0.79       554
-weighted avg       0.86      0.86      0.85       554
-
-    return torch._C._cuda_getDeviceCount() > 0
-Size of input: torch.Size([1, 16, 173])
-x.size(): torch.Size([1, 8, 6, 5])
-Feature size: 240
-Quantized model info:
-model input name: input, exponent: -15
-Conv layer name: /conv1/Conv, output_exponent: -14
-MaxPool layer name: /pool1/MaxPool, output_exponent: -14
-Conv layer name: /conv2/Conv, output_exponent: -13
-MaxPool layer name: /pool2/MaxPool, output_exponent: -13
-Conv layer name: /conv3/Conv, output_exponent: -12
-MaxPool layer name: /pool3/MaxPool, output_exponent: -12
-Flatten layer name: /Flatten, output_exponent: -12
-Gemm layer name: /fc1/Gemm, output_exponent: -11
-Gemm layer name: /fc2/Gemm, output_exponent: -10
-Softmax layer name: /Softmax, output_exponent: -14
-
-
-
-Accuracy of fp32 model: 0.8448
-Accuracy of int16 model: 0.8448
-
-
-
-Accuracy of fp32 model: 0.7545
-Accuracy of int8 model: 0.7635
-    """
     
+    np.random.seed(0)
+    tf.random.set_seed(0)
     
+    species_map = download_audio()
 
-   
-    
-    
-    #CONFIG_APPTRACE_DEST_TRAX and CONFIG_APPTRACE_ENABLE with the ESP-IDF: SDK Configuration editor command.
-    # Data destination jtag
-    
-    # Open IDF Terminal
-    # Install tools 
-    #    cd ~/esp/esp-idf
-    #./install.sh esp32s3
-    # openocd -f board/esp32s3-builtin.cfg
-    # Start monitor and connect via USB (right)
-    # https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/heap_debug.html#heap-tracing
-    # Use host free mode and configure menu#
-    # Enable PSRAM malloc
-    # Panic behaviour
-    # DL Fix
-    # Exlude 0th offset?!!
-    # coefficient dimension has zero mean and unit variance:
-    
-    
-    ########################################################
-    #  Generate Datasets
-    ########################################################
-
-    data_dir = os.path.join(PATH, "data")
-
-    config_path = os.path.join(PATH, "config")
-
-    query = utils.load_config(config_path, "xeno-canto.yaml")["query"]
-
-    num_species = 3
-    audio_dir = os.path.join(data_dir, "audio")
-    annotation_path = os.path.join(data_dir, "annotations.csv")
-
-    # Query xeno-canto
-    # page = xeno_canto.get_composite_page(query)
-    # xeno_canto.plot_distribution(page, threshold=1)
-
-    # Filter to top k species
-    #page = xeno_canto.filter_top_k_species(page, k=num_species)
-    #xeno_canto.plot_distribution(page, threshold=0)
-
-    # Download audio files
-    #species_map = asyncio.run(
-    #   xeno_canto.get_page_audio(page, audio_dir, annotation_path)
-    #)
-    # species_map["other_species"] = num_species
-    # species_map["other_sound"] = num_species
-
-    #esc50.get_esc50_audio(data_dir)
-
-    old_audio_dir = os.path.join(data_dir, "ESC-50-master", "audio")
-    old_annotation_path = os.path.join(data_dir, "ESC-50-master", "meta", "esc50.csv")
-    #esc50.generate(num_species, old_audio_dir, audio_dir, old_annotation_path, annotation_path)
-
-    # Exit program
-    #sys.exit(0)
-
-    ########################################################
-    #  Torch Dataset
-    ########################################################
-
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
-
-    transform = transforms.Compose(
-        [transforms.ToTensor()]
+    audio_processing.preprocess_audio(
+        DATA_DIR, AUDIO_DIR, ANNOTATION_PATH, SAMPLE_RATE, DURATION, H5FILE
     )
-
-    h5py_path = os.path.join(data_dir, "data.h5")
-    dataset = BirdDataset(h5py_path, annotation_path, audio_dir, transform)
-
-    seed = 0
-    torch.manual_seed(seed)
-    generator = torch.Generator().manual_seed(seed)
-
-    train_data, test_data = torch.utils.data.random_split(
-        dataset, [0.75, 0.25], generator=generator
-    )
-    input_size = train_data[0][0].size()
-
-    model_name = "birdnet"
-    models_dir = os.path.join(PATH, "models")
-
-    # import librosa
-    # import numpy as np
-    # import pandas as pd
-    # from matplotlib import pyplot as plt
-    # from src.audio import preprocess as preprocessing
 
     # for i in range(5):
-    #     mfcc = dataset[i][0].numpy()[0, :, :]
-    #     labels = pd.read_csv(annotation_path)
-    #     audio_path = os.path.join(audio_dir, labels.iloc[i, 0])
-    #     mfcc2 = preprocessing.mfcc_from_file(audio_path, False)
-    #     print(np.array_equiv(mfcc, mfcc2))
-    #     fig, (ax1, ax2) = plt.subplots(1, 2)
-    #     img1 = librosa.display.specshow(mfcc, ax=ax1)
-    #     img2 = librosa.display.specshow(mfcc2, ax=ax2)
+    #     mfcc_example = audio_processing.load_data([i], DATA_DIR / H5FILE)
+    #     plt.figure(figsize=(10, 4))
+    #     librosa.display.specshow(mfcc_example.T)
+    #     plt.colorbar()
+    #     plt.title("MFCC")
+    #     plt.tight_layout()
+
     #     plt.show()
+        
 
-    # sys.exit(0)
-
-    ########################################################
-    #  Training
-    ########################################################
-
-    model_name += "_tf"
-    from src.model import model_tf
-    import tensorflow as tf
-    from tensorflow.keras import layers, models, optimizers
-    from tensorflow.keras.losses import SparseCategoricalCrossentropy
-    from tensorflow.keras.metrics import SparseCategoricalAccuracy
-
-    import numpy as np    
-
-    batch_size = 32
-
-    #NOTE - Temporary and hacky way to convert to tensorflow    
-    train_data_np = [(np.transpose(item[0].numpy(), (1, 2, 0)), item[1]) for item in train_data]
-    test_data_np = [(np.transpose(item[0].numpy(), (1, 2, 0)), item[1]) for item in test_data]
-
-
-    train_inputs, train_labels = zip(*train_data_np)
-    test_inputs, test_labels = zip(*test_data_np)
-
-    train_inputs = np.array(train_inputs)
-    train_labels = np.array(train_labels)
-    test_inputs = np.array(test_inputs)
-    test_labels = np.array(test_labels)
-
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_inputs, train_labels))
-    test_dataset = tf.data.Dataset.from_tensor_slices((test_inputs, test_labels))
-
-
-    train_dataloader = tf.data.Dataset.from_tensor_slices((train_inputs, train_labels)).batch(batch_size).shuffle(buffer_size=len(train_dataset))
-    test_dataloader = tf.data.Dataset.from_tensor_slices((test_inputs, test_labels)).batch(batch_size).shuffle(buffer_size=len(test_dataset))
-    #model = model_tf.CustomModel(input_size, num_classes=num_species + 1)
-    model = model_tf.create_custom_model(input_size, num_classes=num_species + 1)
-
-    optimizer = optimizers.Adam()
-    loss_function = SparseCategoricalCrossentropy()
-
-    """
-    num_epochs = 20
-
-    training_losses = []
-    testing_losses = []
-    testing_accuracies = []
-
-    for epoch in range(1, num_epochs + 1):
-        for batch in train_dataloader:
-            inputs, labels = batch
-            with tf.GradientTape() as tape:
-                predictions = model(inputs, training=True)
-                loss = loss_function(labels, predictions)
-
-            gradients = tape.gradient(loss, model.trainable_variables)
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-        train_loss = tf.reduce_mean(loss_function(train_labels, model(train_inputs, training=False)))
-        training_losses.append(train_loss)
-
-        if True:
-            
-            total_correct = 0
-            total_samples = 0
-            testing_loss = 0.0
-
-            for batch in test_dataloader:
-                test_inputs, test_labels = batch
-                test_predictions = model(test_inputs, training=False)
-                test_loss = loss_function(test_labels, test_predictions)
-
-                testing_loss += tf.reduce_mean(test_loss)
-
-                predicted_labels = tf.argmax(test_predictions, axis=1)
-                correct_predictions = tf.equal(predicted_labels, tf.cast(test_labels, tf.int64))
-                total_correct += tf.reduce_sum(tf.cast(correct_predictions, tf.float32))
-                total_samples += test_labels.shape[0]
-
-            testing_loss = testing_loss / len(test_dataloader)
-            testing_accuracy = total_correct / total_samples
-            testing_losses.append(testing_loss)
-            testing_accuracies.append(testing_accuracy)
-
-        print(f"Epoch {epoch}/{num_epochs}, Training Loss: {train_loss.numpy()}, Testing Loss: {testing_loss.numpy()}, Testing Accuracy: {testing_accuracy.numpy()}")
+    mfcc_example = audio_processing.load_data([0], DATA_DIR / H5FILE)
+    mfcc_shape = mfcc_example.squeeze().shape
+    train_dataset, test_dataset, train_size, test_size = tensorflow.get_dataset(DATA_DIR, ANNOTATION_PATH, H5FILE, mfcc_shape)   
     
+    print("Size", train_size, test_size)
 
-    model.save("model_tf.h5")
-    utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
-    model = tf.keras.models.load_model("model_tf.h5")
-    tf.saved_model.save(model, "tmp_model")
-    sys.exit(0)"""
-
-    """
-    python -m tf2onnx.convert --saved-model tmp_model --output birdnet_tf_conv.onnx --opset 13"""
-
-    # batch_size = 32
-
-    # train_dataloader = DataLoader(
-    #     train_data, batch_size=batch_size, shuffle=True, generator=generator
-    # )
-    # test_dataloader = DataLoader(
-    #     test_data, batch_size=batch_size, shuffle=True, generator=generator
-    # )
-
-    # model = CustomModel(input_size, num_classes=num_species+1).to(device)
-
-    # optimizer = optim.Adam(model.parameters())
-
-    # num_epochs = 75
-    # training_losses = []
-    # testing_losses = []
-    # testing_accuracies = []
+    birdnet_model = birdnet.birdnet_model(MODEL_NAME, mfcc_shape, NUM_SPECIES + 1)
+    #birdnet_model.summary()
     
-    # for epoch in range(1, num_epochs + 1):
-    #     create_classification_report = True if epoch == num_epochs else False
-    #     training_losses.append(procedures.train(model, train_dataloader, optimizer, epoch, device))
-    #     testing_loss, accuracy = procedures.test(
-    #         model, test_dataloader, device, create_classification_report
-    #     )
-    #     testing_losses.append(testing_loss)
-    #     testing_accuracies.append(accuracy)
+    _, history = tensorflow.train_model(MODEL_DIR, MODEL_NAME, birdnet_model, train_dataset, test_dataset, num_epochs=10)
+    # plot_metrics(history)
+    # confusion(birdnet_model, train_dataset, test_dataset)
 
-    # utils.plot_torch_results(num_epochs, training_losses, testing_losses, testing_accuracies)
-    # torch_dir = os.path.join(models_dir, "torch")
-
-    # utils.save_model(model, torch_dir, model_name)
-
-
-    ########################################################
-    #  ONNX
-    ########################################################
-
-    # model = utils.load_model(model, torch_dir, model_name)
-
-    #input_size = (183, 32) #FIXME - 
-    ##spec = (tf.TensorSpec((None, 183, 32, 1), tf.float32, name="input"),)
-    path = os.path.join(f"{model_name}.onnx")
-    #import tf2onnx
-    #tf2onnx.convert.from_saved_model("tmp_model", path)
-    
-    #)(model, opset=13, output_path=path)
-
-
-    #model = tf.keras.models.load_model(model_tf.h5)
-    #onnx_dir = os.path.join(models_dir, "onnx")
-
-    #utils.export_onnx(model, onnx_dir, model_name, input_size)
-    #utils.export_onnx_tf(onnx_dir, model, model_name)
-    
-    
-    #utils.load_onnx(".", model_name, check_graph=True)
-
-
-    onnx_optimized_path = "birdnet_tf_conv.onnx"
-
-    model_name = "birdnet_tf_conv_optimized"
-    onnx_optimized_path = optimize.optimize_fp_model(os.path.join(".","birdnet_tf_conv.onnx"))
-
-    ########################################################
-    #  QUANTIZATION
-    ########################################################
-
-    sys.path.append(os.path.join(PATH, "src", "procedures", "calibrate", "linux"))
+    sys.path.append(os.path.join(PATH, "src", "quantization", "linux"))
     from calibrator import *
     from evaluator import *
 
-    #cpp_dir = os.path.join(models_dir, "cpp")
-    cpp_dir = os.path.join(PATH, "src", "model")
-
+    calib_method="minmax"
     target_chip = "esp32s3"
-    quantization_bit = "int16"
-    granularity = "per-tensor"
-    calib_method = "minmax"
-    provider = "CPUExecutionProvider"
+    granularity="per-tensor"
+    quantization_bit="int8"
 
-    calib_dataloader = test_dataloader
-    calib_data = next(iter(calib_dataloader))[0].numpy()
-    model_proto = utils.load_onnx(".", model_name)
+    calibrator = Calibrator(quantization_bit, granularity, calib_method)
+    evaluator = Evaluator(quantization_bit, granularity, target_chip)
 
-    # Calibration dataset
-    calib = Calibrator(quantization_bit, granularity, calib_method)
-    calib.set_providers([provider])
-
-    cpp_file_name = f"{model_name}_coefficient"
-    quantization_params_path = os.path.join(
-        cpp_dir, f"{model_name}_quantization_params.pickle"
+    quantization_exponents = quantization.quantize_model(
+        birdnet_model,
+        MODEL_DIR,
+        MODEL_NAME,
+        calibrator=calibrator,
+        calibration_dataset=test_dataset,
     )
 
-    # # Generate quantization table
-    calib.generate_quantization_table(model_proto, calib_data, quantization_params_path)
+    acc_train, acc_train_quant = quantization.evaluate_model(MODEL_DIR, MODEL_NAME, train_dataset, train_size, evaluator)
+    acc_test, acc_test_quant = quantization.evaluate_model(MODEL_DIR, MODEL_NAME, test_dataset, test_size, evaluator)
 
-    # Export model to cpp
-    f = io.StringIO()
-    with redirect_stdout(f):
-        calib.export_coefficient_to_cpp(
-            model_proto, quantization_params_path, target_chip, cpp_dir, cpp_file_name, True
-        )
-    log = f.getvalue()
-    print(log)
-
-    sys.exit(0)
-
-    # Extract layer names and exponents
-    pattern = r'name: \/?(?P<name>\w+)(?:\/\w+)?, (?:output_)?exponent: (?P<exponent>-?\d+)'
-    matches = re.findall(pattern, log)
-    log_data = [(match[0].lower(), int(match[1])) for match in matches]
+    print(acc_train, acc_train_quant, acc_test, acc_test_quant)
     
-    ########################################################
-    #  JINJA
-    ########################################################
+    input_exponent, layer_information = template_constructor.get_layer_information(birdnet_model, quantization_exponents)
     
-    # Load the pickle file
-    #with open(quantization_params_path, 'rb') as f:
-    #    data = pickle.load(f)
-
-
     tags = {
-        "model_name": model_name,
+        "model_name": MODEL_NAME,
+        "input_exponent": input_exponent,
         "quantization_bit": quantization_bit,
-        "layers": procedures.get_layer_info(model, log_data)
+        "layers": template_constructor.get_jinja_information(layer_information)
     }
-    
-    
-    template_dir = os.path.join(PATH, "src", "templates")
-    utils.render_template(template_dir, "model", tags, cpp_dir, f"{model_name}_model")
-    
 
-    ########################################################
-    #  QUANTIZATION EVALUATION
-    ########################################################
-
-    evaluator = Evaluator(quantization_bit, granularity, target_chip)
-    evaluator.set_providers([provider])
-    evaluator.generate_quantized_model(model_proto, quantization_params_path)
-   
-    m = rt.InferenceSession(onnx_optimized_path, providers=[provider])
-
-    input_name = m.get_inputs()[0].name
-    output_names = [n.name for n in model_proto.graph.output]
-
-    correct = 0
-    correct_quantized = 0
-
-    for i in range(int(len(test_data)/batch_size)):
-
-        #TODO: Validate
-        
-        data = [test_data[j] for j in range(i * batch_size, (i+1) * batch_size)]
-        x = np.array([s[0].numpy() for s in data])
-        y = [s[1] for s in data]
-
-        [out, _] = evaluator.evalute_quantized_model(x, False)
-        correct_quantized += sum(np.argmax(out[0], axis=1) == y)
-
-        out = m.run(output_names, {input_name: x.astype(np.float32)})
-        correct += sum(np.argmax(out[0], axis=1) == y)
-
-    print(f"Accuracy of fp32 model: {correct / len(test_data):.4f}")
-    print(f"Accuracy of {quantization_bit} model: {correct_quantized / len(test_data):.4f}")
-    
+    template_constructor.render_template(
+        TEMPLATE_DIR,
+        MODEL_DIR,
+        MODEL_NAME,
+        tags
+    )

@@ -5,21 +5,21 @@ from tensorflow.keras import models, layers
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def birdnet_model(input_shape: Tuple[int, int], num_classes: int, label:str) -> models.Sequential:
+def birdnet_model(model_name:str, input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Create a BirdNET model.
 
+    :param model_name
     :param input_shape: height and width of the input
     :param num_classes: number of classes
-    :param label: label of the model
     :return: birdnet model
     """
     
-    if label == "default":
-        model = get_birdnet_default()
+    if model_name == "birdnet_default":
+        model = get_birdnet_default(input_shape, num_classes)
     
     return model
     
-def get_birdnet_default() -> models.Sequential::
+def get_birdnet_default(input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Get the default BirdNET model.
     
     :return: default BirdNET model
