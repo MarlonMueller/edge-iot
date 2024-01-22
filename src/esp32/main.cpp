@@ -15,8 +15,8 @@
 #include "audio/preprocess.h"
 #include "esp-led/esp_led.h"
 
-#include "birdnet_model.hpp"
-#include "dl_tool.hpp"
+// #include "birdnet_default.hpp"
+// #include "dl_tool.hpp"
 
 #define TAG "MAIN"
 
@@ -28,6 +28,7 @@ static int input_exponent = -15;
 extern "C" void app_main()
 {
 
+    /*
     ESP_LOGI(TAG, "Initiating application...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
@@ -139,9 +140,11 @@ extern "C" void app_main()
     log_heap();
     #endif
 
+
     Tensor<int16_t> input;
     input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
 
+    
     BIRDNET model;
 
     ESP_LOGI(TAG, "Initialized model...");
@@ -182,6 +185,8 @@ extern "C" void app_main()
     }
 
     model.softmax.get_output().free_element();
+
+    */
 
     clear_esp_led();
     deinit_i2s_mic();

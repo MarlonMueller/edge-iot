@@ -2,7 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs
         main.cpp
-        ../model/birdnet_coefficient.cpp
+        ../model/birdnet_default_coefficient.cpp
 )
 
 set(src_dirs        
