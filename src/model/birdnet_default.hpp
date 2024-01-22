@@ -11,6 +11,8 @@
 
 #include "birdnet_default_coefficient.hpp"
 
+#define TAG "BIRDNET"
+
 using namespace dl;
 using namespace layer;
 using namespace birdnet_default_coefficient;

@@ -15,15 +15,23 @@
 #include "audio/preprocess.h"
 #include "esp-led/esp_led.h"
 
-#include "birdnet_model.hpp"
+// #include "birdnet_default.hpp"
+// #include "dl_tool.hpp"
+
+#include "birdnet_default.hpp"
+
 #include "dl_tool.hpp"
 
 #define TAG "MAIN"
 
-static int input_exponent = -15;
+static int input_exponent = -7;
 
 #define SAMPLE_RATE 16000
 #define AUDIO_BUFFER_SIZE SAMPLE_RATE * 5
+
+// Memory leak MFCC?
+// Preprocessing no two buffer but store int in float buffer
+
 
 extern "C" void app_main()
 {
@@ -52,12 +60,6 @@ extern "C" void app_main()
     set_esp_led_rgb(255, 0, 0);
 
     ESP_ERROR_CHECK(read_i2s_mic(audio_buffer, AUDIO_BUFFER_SIZE));
-    clear_esp_led();
-
-    ESP_LOGI(TAG, "Read audio buffer...");
-    #ifdef CONFIG_HEAP_LOG
-    log_heap();
-    #endif
 
     // Set led to green
     set_esp_led_rgb(0, 255, 0);
@@ -78,16 +80,17 @@ extern "C" void app_main()
         }
     }
 
-    ESP_LOGI(TAG, "Preprocessed audio buffer...");
-    #ifdef CONFIG_HEAP_LOG
-    log_heap();
-    #endif
-
     float **mfcc_output;
     size_t num_frames = 0;
     int num_mfcc = get_num_mfcc();
 
     malloc_mfcc_module();
+
+    ESP_LOGI(TAG, "Allocated MFCC module...");
+    #ifdef CONFIG_HEAP_LOG
+    log_heap();
+    #endif
+    
     mfcc(audio_buffer, AUDIO_BUFFER_SIZE, &mfcc_output, &num_frames);
     free_mfcc_module();
     free(audio_buffer);
@@ -103,7 +106,12 @@ extern "C" void app_main()
     // TODO: num_frames: size_t -> int
     int num_frames_int = static_cast<int>(num_frames);
 
-    int16_t *model_input = (int16_t *)malloc(num_frames_int * num_mfcc * sizeof(int16_t *));
+    #ifdef QUANTIZATION_BITS_16
+    int16_t *model_input = (int16_t *)malloc(num_frames_int * num_mfcc * sizeof(int16_t));
+    #else
+    int8_t *model_input = (int8_t *)malloc(num_frames_int * num_mfcc * sizeof(int8_t));
+    #endif
+    
     float min_value = std::numeric_limits<float>::max();
     float max_value = std::numeric_limits<float>::lowest();
 
@@ -128,21 +136,38 @@ extern "C" void app_main()
             for (size_t j = 0; j < num_mfcc && pos < num_frames * num_mfcc; ++j)
             {
                 float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
+
+                #ifdef QUANTIZATION_BITS_16
                 model_input[pos] = (int16_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
+                #else
+                model_input[pos] = (int8_t)DL_CLIP(normalized_input * (1 << -input_exponent), -128, 127);
+                #endif
+                
                 ++pos;
             }
         }
     }
+
+    for (size_t i = 0; i < num_frames; ++i)
+    {
+        free(mfcc_output[i]);
+    }
+    free(mfcc_output);
 
     ESP_LOGI(TAG, "Postprocessed MFCCs...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
     #endif
 
+    #ifdef QUANTIZATION_BITS_16
     Tensor<int16_t> input;
     input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
+    #else
+    Tensor<int8_t> input;
+    input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
+    #endif
 
-    BIRDNET model;
+    BIRDNET_DEFAULT model;
 
     ESP_LOGI(TAG, "Initialized model...");
     #ifdef CONFIG_HEAP_LOG
@@ -182,6 +207,11 @@ extern "C" void app_main()
     }
 
     model.softmax.get_output().free_element();
+
+    ESP_LOGI(TAG, "Freed model...");
+    #ifdef CONFIG_HEAP_LOG
+    log_heap();
+    #endif
 
     clear_esp_led();
     deinit_i2s_mic();

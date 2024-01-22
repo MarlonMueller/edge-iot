@@ -5,5 +5,17 @@ menu "Custom"
         default y
         help
             Enable heap logging for debugging purposes.
+
+    config QUANTIZATION_BITS_16
+        bool "Use 16-bit quantization"
+        default n
+        help
+            Use 16-bit quantization instead of 8-bit.
+
+    # config BIRDNET_MODEL
+    #     string "BirdNET model"
+    #     default "birdnet_default"
+    #     help
+    #         Select the BirdNET model to use.
    
 endmenu
