@@ -3,9 +3,16 @@
  * @brief Entry point
  */
 
+
 #include "esp_log.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+
+#include <time.h>
+#include <sys/time.h>
+#include "esp_sleep.h"
+#include "driver/rtc_io.h"
 
 #ifdef CONFIG_HEAP_LOG
 #include "heap-log/heap_log.h"
@@ -15,25 +22,25 @@
 #include "audio/preprocess.h"
 #include "esp-led/esp_led.h"
 
-
-#include "birdnet_default.hpp"
 #include "dl_tool.hpp"
+#include "birdnet_default.hpp"
 
 #define TAG "MAIN"
 
 static int input_exponent = -7;
 
+
 #define SAMPLE_RATE 16000
 #define AUDIO_BUFFER_SIZE SAMPLE_RATE * 5
 
-// Memory leak MFCC?
-// Preprocessing no two buffer but store int in float buffer
+static int wakeup_time_sec = 30;
+static gpio_num_t wakeup_pin = GPIO_NUM_4;
+static RTC_DATA_ATTR struct timeval tv_sleep;
 
-
-extern "C" void app_main()
+extern "C" void record_and_infer_sound()
 {
 
-    ESP_LOGI(TAG, "Initiating application...");
+    ESP_LOGI(TAG, "Initiating record_and_infer_sound...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
     #endif
@@ -41,7 +48,8 @@ extern "C" void app_main()
     init_esp_led();
     init_i2s_mic(SAMPLE_RATE);
 
-    ESP_LOGI(TAG, "Initialized application...");
+
+    ESP_LOGI(TAG, "Initialized record_and_infer_sound...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
     #endif
@@ -217,4 +225,62 @@ extern "C" void app_main()
     #ifdef CONFIG_HEAP_LOG
     log_heap();
     #endif
+}
+
+
+
+extern "C" void app_main(void)
+{
+
+    switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_TIMER: {
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
+            // See comments below (and header for how to use RTC RAM)
+            break;
+        }
+        case ESP_SLEEP_WAKEUP_EXT0: {
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_EXT0");
+            record_and_infer_sound();
+            break;
+        }
+        case ESP_SLEEP_WAKEUP_UNDEFINED:
+        default:
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_UNDEFINED");
+    }
+
+    ESP_LOGI(TAG, "Entering deep sleep...");
+
+    // Enabling EXT0 button wakeup
+    ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wakeup_pin, 1));
+    ESP_ERROR_CHECK(rtc_gpio_pullup_dis(wakeup_pin));
+    ESP_ERROR_CHECK(rtc_gpio_pulldown_en(wakeup_pin));
+
+
+    /*
+    TODO - settimeofday using GPS to get accurate gettimeofday
+    Then compute next timer wakeup time by absolute time
+    */
+
+    struct timeval tv_now;
+    gettimeofday(&tv_now, NULL);
+    int64_t time_us = (int64_t)(tv_now.tv_sec - tv_sleep.tv_sec) * 1000000L + (int64_t)(tv_now.tv_usec - tv_sleep.tv_usec);
+    
+    if (time_us < 0) {
+        /*!
+        OVERLAP - inference overlapped into next wakeup
+        Handle somehow (probably just same function call; maybe do at start
+        of main and prioritize LORA over inference)
+        
+        Also: what happens if timer wakeup but also button wakeup?
+        -> probably just nothing
+        */
+        time_us = 0;
+    }
+
+    int64_t wakeup_time = wakeup_time_sec * 1000000L - time_us;
+    ESP_LOGI(TAG, "Wakeup time: %lld", wakeup_time);
+    ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_time));
+
+    tv_sleep = tv_now;
+    esp_deep_sleep_start();
 }
