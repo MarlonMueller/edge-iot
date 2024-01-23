@@ -1,26 +1,24 @@
 const mongoose = require('mongoose')
 const { responseJSON, errorJSON } = require('../helpers/generalHelper')
 const { unknown } = require('../constants/errorCodes')
-const { Node } = require('./node.controller');
 
-const birdSchema = new mongoose.Schema(
+const nodeSchema = new mongoose.Schema(
   {
-    name: String,
+    _id: String,
     long: Number,
     lat: Number,
   },
   { timestamps: true }
 )
-const Bird = mongoose.model('Bird', birdSchema)
+const Node = mongoose.model('Node', nodeSchema)
 const put = async (req, res) => {
-  const { name, nodeId } = req.body
+  const { _id, long, lat } = req.body
   try {
-    
-    const node = await Node.findOne({_id:nodeId})
-
-    const bird = new Bird({ name, long: node?.long, lat: node?.lat })
-    const newBird = await bird.save()
-    return responseJSON(newBird)
+    const newNode = await Node.findOneAndUpdate({_id}, {long,lat}, {
+      new: true,
+      upsert: true // Make this update into an upsert
+    });
+    return responseJSON(newNode)
   } catch (exception) {
     return errorJSON(unknown, exception.message)
   }
@@ -28,13 +26,14 @@ const put = async (req, res) => {
 
 const get = async (req, res) => {
   try {
-    const birds = await Bird.find()
-    return responseJSON(birds)
+    const nodes = await Node.find()
+    return responseJSON(nodes)
   } catch (exception) {
     return errorJSON(unknown, exception.message)
   }
 }
 module.exports = {
+  Node,
   routes: {
     put,
     get,
