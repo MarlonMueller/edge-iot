@@ -33,9 +33,10 @@ static int input_exponent = -7;
 #define SAMPLE_RATE 16000
 #define AUDIO_BUFFER_SIZE SAMPLE_RATE * 5
 
-static int wakeup_time_sec = 30;
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
-static RTC_DATA_ATTR struct timeval tv_sleep;
+
+static int wakeup_lora_us = 20 * 1000000L;
+static RTC_DATA_ATTR struct timeval last_lora_wakeup;
 
 extern "C" void record_and_infer_sound()
 {
@@ -232,55 +233,48 @@ extern "C" void record_and_infer_sound()
 extern "C" void app_main(void)
 {
 
-    switch (esp_sleep_get_wakeup_cause()) {
-        case ESP_SLEEP_WAKEUP_TIMER: {
-            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
-            // See comments below (and header for how to use RTC RAM)
-            break;
-        }
-        case ESP_SLEEP_WAKEUP_EXT0: {
-            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_EXT0");
-            record_and_infer_sound();
-            break;
-        }
-        case ESP_SLEEP_WAKEUP_UNDEFINED:
-        default:
-            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_UNDEFINED");
-    }
-
-    ESP_LOGI(TAG, "Entering deep sleep...");
-
     // Enabling EXT0 button wakeup
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wakeup_pin, 1));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(wakeup_pin));
     ESP_ERROR_CHECK(rtc_gpio_pulldown_en(wakeup_pin));
 
+    switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_EXT0: {
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_EXT0");
+            
+            record_and_infer_sound();
 
-    /*
-    TODO - settimeofday using GPS to get accurate gettimeofday
-    Then compute next timer wakeup time by absolute time
-    */
-
-    struct timeval tv_now;
-    gettimeofday(&tv_now, NULL);
-    int64_t time_us = (int64_t)(tv_now.tv_sec - tv_sleep.tv_sec) * 1000000L + (int64_t)(tv_now.tv_usec - tv_sleep.tv_usec);
-    
-    if (time_us < 0) {
-        /*!
-        OVERLAP - inference overlapped into next wakeup
-        Handle somehow (probably just same function call; maybe do at start
-        of main and prioritize LORA over inference)
+            struct timeval tv_now;
+            gettimeofday(&tv_now, NULL);
+            int64_t time_us = (int64_t)(tv_now.tv_sec - last_lora_wakeup.tv_sec) * 1000000L + (int64_t)(tv_now.tv_usec - last_lora_wakeup.tv_usec);
+            time_us = wakeup_lora_us - time_us;
         
-        Also: what happens if timer wakeup but also button wakeup?
-        -> probably just nothing
-        */
-        time_us = 0;
+            if (time_us > 0) {
+                ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(time_us)); 
+                break;
+            }
+        }
+        case ESP_SLEEP_WAKEUP_TIMER: {
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
+
+            //TODO - LORA
+
+            struct timeval tv_now;
+            gettimeofday(&tv_now, NULL);
+            int64_t time_us = (int64_t)(tv_now.tv_sec - last_lora_wakeup.tv_sec) * 1000000L + (int64_t)(tv_now.tv_usec - last_lora_wakeup.tv_usec);
+            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us + (wakeup_lora_us - time_us)));
+            last_lora_wakeup = tv_now;
+            
+            break;
+        }
+        case ESP_SLEEP_WAKEUP_UNDEFINED:
+        default:
+            ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_UNDEFINED");
+            
+            gettimeofday(&last_lora_wakeup, NULL);
+            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 
     }
 
-    int64_t wakeup_time = wakeup_time_sec * 1000000L - time_us;
-    ESP_LOGI(TAG, "Wakeup time: %lld", wakeup_time);
-    ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_time));
-
-    tv_sleep = tv_now;
+    ESP_LOGI(TAG, "Entering deep sleep...");
     esp_deep_sleep_start();
 }

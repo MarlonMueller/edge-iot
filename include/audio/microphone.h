@@ -10,9 +10,9 @@
 #include <string.h>
 #include "esp_err.h"
 
-#define SD_PIN 4  // or DOUT
-#define WS_PIN 5  // or LRCL
-#define SCK_PIN 6 // or BCLK
+#define SD_PIN 1  // or DOUT
+#define WS_PIN 42  // or LRCL
+#define SCK_PIN 40 // or BCLK
 
 /**
  * @brief Initialize I2S transmission for microphone.
