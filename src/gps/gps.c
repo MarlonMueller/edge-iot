@@ -849,7 +849,7 @@ esp_err_t nmea_parser_remove_handler(nmea_parser_handle_t nmea_hdl, esp_event_ha
     return esp_event_handler_unregister_with(esp_gps->event_loop_hdl, ESP_NMEA_EVENT, ESP_EVENT_ANY_ID, event_handler);
 }
 
-static const char *TAG = "gps_demo";
+static const char *TAG = "gps";
 
 #define YEAR_BASE (2000) // date in GPS starts from 2000
 
@@ -880,7 +880,8 @@ void gps_event_handler(void *event_handler_arg, esp_event_base_t event_base, int
         gps_data[5] = gps->valid;
 
         // Signal that GPS data has been received
-        xSemaphoreGive(gps_data_received_sem);
+        if (gps->valid)
+            xSemaphoreGive(gps_data_received_sem);
     }
     else if (event_id == GPS_UNKNOWN)
     {
@@ -912,15 +913,23 @@ void get_gps_data(double *latitude, double *longitude, uint8_t *hour, uint8_t *m
     nmea_parser_add_handler(nmea_hdl, gps_event_handler, gps_data);
 
     // Wait for GPS data or a timeout (adjust as needed)
-    if (xSemaphoreTake(gps_data_received_sem, 10000 / portTICK_PERIOD_MS) == pdFALSE)
+    ESP_LOGW(TAG, "Waiting for GPS to Sync....");
+
+    bool timeout = false;
+    if (xSemaphoreTake(gps_data_received_sem, 1800000 / portTICK_PERIOD_MS) == pdFALSE)
     {
-        ESP_LOGW(TAG, "Timeout waiting for GPS data");
+        timeout = true;
+        ESP_LOGW(TAG, "Timeout waiting for GPS data / sync");
     }
 
-    /* unregister event handler */
-    nmea_parser_remove_handler(nmea_hdl, gps_event_handler);
-    /* deinit NMEA parser library */
-    nmea_parser_deinit(nmea_hdl);
+    // Remove handler if timeout OR received valid data(stop polling gps)
+    if (timeout || gps_data[5])
+    {
+        /* unregister event handler */
+        nmea_parser_remove_handler(nmea_hdl, gps_event_handler);
+        /* deinit NMEA parser library */
+        nmea_parser_deinit(nmea_hdl);
+    }
 
     // Extract values from the array and store them in the provided variables
     *latitude = gps_data[0];
@@ -928,7 +937,14 @@ void get_gps_data(double *latitude, double *longitude, uint8_t *hour, uint8_t *m
     *hour = gps_data[2];
     *minute = gps_data[3];
     *second = gps_data[4];
-    *valid = gps_data[5];
+    if (timeout)
+    {
+        *valid = false;
+    }
+    else
+    {
+        *valid = gps_data[5];
+    }
 
     // Delete the semaphore
     vSemaphoreDelete(gps_data_received_sem);
