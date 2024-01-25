@@ -14,3 +14,5 @@ torchvision==0.16.0
 torchsummary==1.5.1
 pyyaml==6.0.1
 h5py==3.10.0
+sphinx==7.1.2
+seaborn==0.13.2
