@@ -17,8 +17,10 @@ void * rx_f(void *p){
         printf("init package received\n");
 
         uint8_t id[6];
-        disassemble_init_package(rx->buf, id);
-        printf("ID: %d\n", id);
+        float latitude, longitude;
+
+        disassemble_init_package(rx->buf, id, &latitude, &longitude);
+        printf("ID: %d. GPS coord: %f %f \n", id, latitude, longitude);
 
         uint8_t send_buf[255];
         int size;

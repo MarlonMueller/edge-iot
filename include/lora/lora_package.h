@@ -4,12 +4,11 @@ LORA PAYLOAD FORMAT
 
 1. LoRa initialization package:
 
- 0                   1                   2                   3                   4
- 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                                             ESP ID                                            |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
+ 0                   1                   2                   3                   4                   5                   6                   7                   8                   9                   1                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                             ESP ID                                            |                                                              GPS                                                              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 2. LoRa initialization package ACK:
 
  0                   1                   2                   3                   4                   5
@@ -50,7 +49,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
-#define LORA_INIT_PAYLOAD_SIZE 24
+#define LORA_INIT_PAYLOAD_SIZE 112
 #define LORA_INIT_ACK_PAYLOAD_SIZE 32
 
 #define LORA_NN_PAYLOAD_SIZE 19
@@ -61,11 +60,13 @@ extern "C" {
  * @brief Creates a LoRa initliazation package. Called by ESP32S3. 
  * 
  * @param id Pointer to ID of the original device (expected ESP MAC). 
+ * @param latitude Latitude of the original device.
+ * @param longitude Longitude of the original device.
  * @param lora_package Pointer to the LoRa package to be sent.
  * @param lora_package_size Pointer to the LoRa package size.
 */
-void assemble_init_package(uint8_t *id, uint8_t *lora_package, 
-    int *lora_package_size);
+void assemble_init_package(uint8_t *id, float latitude, float longitude, 
+    uint8_t *lora_package, int *lora_package_size);
 
 /**
  * @brief Disassembles a LoRa initialization package. Called by RPi.
@@ -73,7 +74,8 @@ void assemble_init_package(uint8_t *id, uint8_t *lora_package,
  * @param lora_package Pointer to the LoRa package.
  * @param id Pointer to ID of original device (expected ESP MAC).
 */
-void disassemble_init_package(uint8_t *lora_package, uint8_t *id);
+void disassemble_init_package(uint8_t *lora_package, uint8_t *id, 
+    float *latitude, float *longitude);
 
 /**
  * @brief Creates a LoRa initialization package ACK. Called by RPi. 

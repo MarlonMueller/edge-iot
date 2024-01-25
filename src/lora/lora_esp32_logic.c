@@ -145,7 +145,7 @@ void initialize_comm(void)
 
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
-    assemble_init_package(mac, tx_buffer, &total_input);
+    assemble_init_package(mac, 2.5234234, 25.23425543, tx_buffer, &total_input);
 
     for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 
