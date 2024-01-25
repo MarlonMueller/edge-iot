@@ -16,48 +16,39 @@
 #include "esp_log.h"
 #include "esp_mac.h"
 
+#include "esp_attr.h" // For all logic relatd to deep sleep. 
+#include "esp_sleep.h"
+
+#define NUM_TRIES 3 // number of tries to send a packet
+#define MAX_COUNTER 95 
+#define MAX_BUFFER_SIZE 256
+
+#define PETITION_DELAY (100 / portTICK_PERIOD_MS) // ms between petitions
+#define NEXT_INIT_RETRY (300 / portTICK_PERIOD_MS) // ms between init retries
+#define NEXT_PERIODIC_DATA (500 / portTICK_PERIOD_MS) // ms between periodic data
+
+typedef struct {
+    bool d1, d2, d3;
+} detection_t;
+
+// Values stores between deep sleep activations. 
+
+static RTC_DATA_ATTR bool lora_is_initialized = false;
+
+static RTC_DATA_ATTR uint8_t local_id;
+static RTC_DATA_ATTR uint8_t counter;
+static RTC_DATA_ATTR detection_t detection;
+
+static RTC_DATA_ATTR uint8_t rx_buffer[MAX_BUFFER_SIZE];
+static RTC_DATA_ATTR uint8_t tx_buffer[MAX_BUFFER_SIZE];
+
 #define TAG "LORA_ESP32_LOGIC"
 
 // Local functions
 
-void task_rx(void *pvParameters)
+bool task_rx()
 {
-	ESP_LOGI(pcTaskGetName(NULL), "Start");
-	uint8_t buf[256]; // Maximum Payload size of SX1276/77/78/79 is 255
-
-	while(1) {
-		lora_receive(); // put into receive mode
-
-		if (lora_received()) {
-			int rxLen = lora_receive_packet(buf, sizeof(buf));
-			ESP_LOGI(pcTaskGetName(NULL), "%d byte packet received:[%.*s]", rxLen, rxLen, buf);
-		}
-
-		vTaskDelay(1); // Avoid WatchDog alerts
-	} // end while
-}
-
-
-void task_tx(uint8_t *buf, int size)
-{
-   ESP_LOGI(TAG, "Start");
-   lora_send_packet(buf, size);
-   ESP_LOGI(TAG, "%d Bytes packets sent...", size);
-
-   int lost = lora_packet_lost();
-
-   if (lost != 0) {
-      ESP_LOGW(TAG, "%d packets lost", lost);
-   }
-}
-
-
-bool send_nn_data(uint8_t *tx_buffer, int total_input) {
-    bool status = false;
-
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-    task_tx((uint8_t *) tx_buffer, total_input);
-    ESP_LOGI(TAG, "Data sent. Waiting for ACK...");
+	ESP_LOGI(TAG, "Start reception of packages...");
 
     lora_receive(); // put into receive mode
 
@@ -65,51 +56,38 @@ bool send_nn_data(uint8_t *tx_buffer, int total_input) {
 
     if (lora_received()) {
         int rxLen = lora_receive_packet(rx_buffer, sizeof(rx_buffer));
-        uint8_t local_local_counter;
+        ESP_LOGI(TAG, "%d byte packet received:[%.*s]", rxLen, rxLen, rx_buffer);
 
-        disassemble_nn_ack_package(rx_buffer, &local_id, &local_local_counter);
-
-        // Display id and counter
-
-        ESP_LOGI(TAG, "ID: %d - Counter: %d", local_id, local_local_counter);
-
-        status = true;
+        return true;
     } else {
-        ESP_LOGI(TAG, "No ACK received. Waiting...");
-        vTaskDelay(PETITION_DELAY); // Avoid WatchDog alerts
+        ESP_LOGW(TAG, "task_rx No packet received...");
+        return false;
     }
-
-    return status;
 }
 
-void send_data() 
+
+bool task_tx(uint8_t *buf, int size)
 {
-    int total_input;
-    assemble_nn_package(local_id, counter, detection.d1, detection.d2, 
-                        detection.d3, tx_buffer, &total_input);
+   ESP_LOGI(TAG, "Start transmission of packages...");
+   lora_send_packet(buf, size);
+   ESP_LOGI(TAG, "%d Bytes packets sent...", size);
 
-    bool flag = false;
+   int lost = lora_packet_lost();
 
-    for (int i=0; i<NUM_TRIES && !flag; ++i) {
-        flag = send_nn_data(tx_buffer, total_input);
-    }
-
-    if (!flag) 
-        ESP_LOGE(TAG, "Could not send data...");
-
-    // Prepare next iteration
-
-    ++counter;
-    detection.d1 = false;
-    detection.d2 = false;
-    detection.d3 = false;  
+   if (lost != 0) {
+      ESP_LOGW(TAG, "%d packets lost", lost);
+      return false;
+   } else {
+      return true;
+   }
 }
-
 
 // End local function
 
 void setup_lora_comm() 
 {
+    ESP_LOGI(TAG, "Execution of LoRa setup...");
+
     if (lora_init() == 0) {
         ESP_LOGE(pcTaskGetName(NULL), "Does not recognize the module");
         while (1) {
@@ -153,38 +131,41 @@ void setup_lora_comm()
     ESP_LOGI(pcTaskGetName(NULL), "crc_enabled");
 }
 
+bool is_initialized_comm() 
+{
+    return lora_is_initialized;
+
+}
+
 void initialize_comm(void) 
 {
+    ESP_LOGI(TAG, "LoRa initialization execution...");
+
     int total_input = 0;
 
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
     assemble_init_package(mac, tx_buffer, &total_input);
 
-    // Wait for ACK
+    for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 
-    bool flag = false;
+        // Tranmit data. 
 
-    while (!flag) {
         task_tx(tx_buffer, total_input);
-        ESP_LOGI(TAG, "Init package sent. Waiting for ACK...");
+        ESP_LOGI(TAG, "Trying to initiliaze LoRa. Waiting for ACK...");
 
-		lora_receive(); // put into receive mode
+        // Wait for ACK.      
 
-        vTaskDelay(50);
+        bool received = task_rx();
 
-		if (lora_received()) {
-			int rxLen = lora_receive_packet(rx_buffer, sizeof(rx_buffer));
-
-
-			ESP_LOGI(TAG, "%d byte packet received:[%.*s]", rxLen, rxLen, rx_buffer);
-
+        if (received) {
             uint8_t the_local_mac[6];
-            uint8_t the_local_id;
+            uint8_t the_local_id = 0;
 
             disassemble_init_ack_package(rx_buffer, the_local_mac, &the_local_id);
 
-            // compare local_mac with mac
+            // Confirm correct ACK. 
+
             bool mac_match = true;
 
             for (int i=0; i<6; ++i) {
@@ -197,29 +178,81 @@ void initialize_comm(void)
             if (mac_match) {
                 ESP_LOGI(TAG, "Local ID: %d", the_local_id);
                 local_id = the_local_id;
-                flag = true;
+                lora_is_initialized = true;
+            } else {
+                ESP_LOGW(TAG, "MAC does not match. Waiting...");
             }
-		} else {
-            ESP_LOGI(TAG, "No packet received. Waiting...");
-            vTaskDelay(PETITION_DELAY); // Avoid WatchDog alerts
+
+        } else {
+            ESP_LOGW(TAG, "No ACK received. Waiting...");
+            vTaskDelay(NEXT_INIT_RETRY); // Avoid WatchDog alerts
+        
         }
-		
 	} // end for
 
     // reset data
 
-    counter = 0;
-    detection.d1 = false;
-    detection.d2= false;
-    detection.d3 = false;
+    if (lora_is_initialized) {
+        counter = 0;
+        detection.d1 = false;
+        detection.d2 = false;
+        detection.d3 = false;
+    }
 }
 
-void send_periodic_data(void *pvParameters) {
+void send_data() 
+{
+    ESP_LOGI(TAG, "LoRa send_data execution...");
 
-    while (true) {
-        send_data();
-        vTaskDelay(NEXT_PERIODIC_DATA);
+    // Exceptions
+
+    if (!lora_is_initialized) {
+        ESP_LOGW(TAG, "LoRa sending package was requested, but LoRa was not initiated...");
+        return;
     }
+
+    // Formal execution
+
+    int total_input;
+    assemble_nn_package(local_id, counter, detection.d1, detection.d2, 
+                        detection.d3, tx_buffer, &total_input);
+
+    bool flag = false;
+
+    for (int i=0; i<NUM_TRIES && !flag; ++i) {
+        
+        // Send data
+
+        task_tx((uint8_t *) tx_buffer, total_input);
+        ESP_LOGI(TAG, "NN Data sent. Waiting for ACK...");
+
+        // Wait for ACK
+
+        uint8_t local_counter = 0;
+
+        flag = task_rx();
+
+        if (flag) {
+            disassemble_nn_ack_package(rx_buffer, &local_id, &local_counter);
+            ESP_LOGI(TAG, "ID: %d - Counter: %d", local_id, local_counter);
+        } else {
+            ESP_LOGW(TAG, "No ACK received. Waiting...");
+            vTaskDelay(PETITION_DELAY); // Avoid WatchDog alerts
+        }
+    }
+
+    if (!flag) 
+        ESP_LOGW(TAG, "Could not send data...");
+
+    // Prepare next iteration
+
+    ++counter;
+    detection.d1 = false;
+    detection.d2 = false;
+    detection.d3 = false;  
+
+    if (counter >= MAX_COUNTER)
+        lora_is_initialized = false; // needs to resync
 }
 
 void set_activation(int idx) {
