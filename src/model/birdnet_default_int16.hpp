@@ -9,39 +9,41 @@
 #include "dl_layer_max_pool2d.hpp"
 #include "dl_layer_fullyconnected.hpp"
 
-#include "birdnet_default_coefficient.hpp"
+#include "birdnet_default_int16_coefficient.hpp"
 
 #define TAG "BIRDNET"
 
 using namespace dl;
 using namespace layer;
-using namespace birdnet_default_coefficient;
+using namespace birdnet_default_int16_coefficient;
 
-// input_exponent: ['-7']
+// input_exponent: ['-15']
 
-class BIRDNET_DEFAULT : public Model<int8_t>
+// evaluation: acc_train: 88.03952158086324, acc_train_quant: 88.03952158086324, acc_test: 88.14968814968816, acc_test_quant: 88.14968814968816
+
+class BIRDNET_DEFAULT_INT16 : public Model<int16_t>
 {
 private:
 
-    Conv2D<int8_t> conv2d;
-    MaxPool2D<int8_t> max_pooling2d;
-    Conv2D<int8_t> conv2d_1;
-    MaxPool2D<int8_t> max_pooling2d_1;
-    Conv2D<int8_t> conv2d_2;
-    MaxPool2D<int8_t> max_pooling2d_2;
-    Flatten<int8_t> flatten;
-    FullyConnected<int8_t> dense;
-    FullyConnected<int8_t> dense_1;
+    Conv2D<int16_t> conv2d;
+    MaxPool2D<int16_t> max_pooling2d;
+    Conv2D<int16_t> conv2d_1;
+    MaxPool2D<int16_t> max_pooling2d_1;
+    Conv2D<int16_t> conv2d_2;
+    MaxPool2D<int16_t> max_pooling2d_2;
+    Flatten<int16_t> flatten;
+    FullyConnected<int16_t> dense;
+    FullyConnected<int16_t> dense_1;
     
 
 public:
 
-    Softmax<int8_t> softmax;
+    Softmax<int16_t> softmax;
     
 
-    BIRDNET_DEFAULT() :
-        conv2d(Conv2D<int8_t>(
-            -7,
+    BIRDNET_DEFAULT_INT16() :
+        conv2d(Conv2D<int16_t>(
+            -15,
             get_statefulpartitionedcall_sequential_conv2d_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_biasadd_activation(),
@@ -50,10 +52,10 @@ public:
             "conv2d")
         ),
         
-        max_pooling2d(MaxPool2D<int8_t>({3,1}, PADDING_VALID, {}, 3, 1, "max_pooling2d")),
+        max_pooling2d(MaxPool2D<int16_t>({3,1}, PADDING_VALID, {}, 3, 1, "max_pooling2d")),
         
-        conv2d_1(Conv2D<int8_t>(
-            -6,
+        conv2d_1(Conv2D<int16_t>(
+            -13,
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_activation(),
@@ -62,10 +64,10 @@ public:
             "conv2d_1")
         ),
         
-        max_pooling2d_1(MaxPool2D<int8_t>({2,2}, PADDING_VALID, {}, 2, 2, "max_pooling2d_1")),
+        max_pooling2d_1(MaxPool2D<int16_t>({2,2}, PADDING_VALID, {}, 2, 2, "max_pooling2d_1")),
         
-        conv2d_2(Conv2D<int8_t>(
-            -4,
+        conv2d_2(Conv2D<int16_t>(
+            -12,
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_activation(),
@@ -74,31 +76,31 @@ public:
             "conv2d_2")
         ),
         
-        max_pooling2d_2(MaxPool2D<int8_t>({2,2}, PADDING_VALID, {}, 2, 2, "max_pooling2d_2")),
+        max_pooling2d_2(MaxPool2D<int16_t>({2,2}, PADDING_VALID, {}, 2, 2, "max_pooling2d_2")),
         
-        flatten(Flatten<int8_t>("flatten", false)),
+        flatten(Flatten<int16_t>("flatten", false)),
         
-        dense(FullyConnected<int8_t>(
-            -3,
+        dense(FullyConnected<int16_t>(
+            -11,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
             true, "dense")
         ),
         
-        dense_1(FullyConnected<int8_t>(
-            -3,
+        dense_1(FullyConnected<int16_t>(
+            -10,
             get_fused_gemm_1_filter(),
             get_fused_gemm_1_bias(),
             NULL,
             true, "dense_1")
         ),
         
-        softmax(Softmax<int8_t>(-6, "softmax")){}
+        softmax(Softmax<int16_t>(-14, "softmax")){}
         
 
 
-    void build(Tensor<int8_t>& input) {
+    void build(Tensor<int16_t>& input) {
         
         this->conv2d.build(input, false);
         
@@ -122,7 +124,7 @@ public:
         
     }
 
-    void call(Tensor<int8_t>& input) {
+    void call(Tensor<int16_t>& input) {
         
         
         this->conv2d.call(input);

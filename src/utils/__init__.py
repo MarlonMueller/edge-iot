@@ -11,4 +11,4 @@ COLORS = [
     "#b9a2c5",
 ]
 
-from .vis import plot_image, plot_wave, plot_mel, plot_torch_results
+from .visualization import plot_history, plot_confusion_matrices

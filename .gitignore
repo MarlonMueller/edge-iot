@@ -4,6 +4,8 @@
 .DS_Store
 ignore/
 
+assets/*
+
 # Intermediate models
 src/model/checkpoints/*
 src/model/onnx_birdnet/*

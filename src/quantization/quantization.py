@@ -7,10 +7,10 @@ import onnxruntime
 import tensorflow as tf
 from contextlib import redirect_stdout
 
-def evaluate_model(model_dir, model_name, dataset, dataset_size, evaluator):
+def evaluate_model(model_dir, model_name, quantization_bit, dataset, dataset_size, evaluator):
 
     optimized_model_path =  str(model_dir / "onnx_birdnet" / f"{model_name}_optimized.onnx")
-    quantization_params_path = model_dir / "quantization_params" / f"{model_name}_params.pickle"
+    quantization_params_path = model_dir / "quantization_params" / f"{model_name}_{quantization_bit}_params.pickle"
  
     provider = "CPUExecutionProvider"
     model_proto = onnx.load(optimized_model_path)
@@ -85,7 +85,7 @@ def optimize_model(onnx_model_path):
 
 
 
-def quantize_model(model, model_dir, model_name, calibrator, calibration_dataset):
+def quantize_model(model, model_dir, model_name, quantization_bit, calibrator, calibration_dataset):
     
     tf_model_path = str(model_dir / "tf_birdnet" / f"{model_name}")
     onnx_model_path = str(model_dir / "onnx_birdnet" / f"{model_name}.onnx")
@@ -117,7 +117,7 @@ def quantize_model(model, model_dir, model_name, calibrator, calibration_dataset
     
     calibrator.set_providers([provider])
     
-    quantization_params_path = model_dir / "quantization_params" / f"{model_name}_params.pickle"
+    quantization_params_path = model_dir / "quantization_params" / f"{model_name}_{quantization_bit}_params.pickle"
     
     calibrator.generate_quantization_table(
         model_proto,
@@ -132,13 +132,13 @@ def quantize_model(model, model_dir, model_name, calibrator, calibration_dataset
             quantization_params_path,
             target_chip,
             str(model_dir),
-            f"{model_name}_coefficient",
+            f"{model_name}_{quantization_bit}_coefficient",
             True
         )
 
     quantization_exponents = f.getvalue()
 
-    with open(model_dir / "quantization_params" / f"{model_name}.txt", "w") as of:
+    with open(model_dir / "quantization_params" / f"{model_name}_{quantization_bit}.txt", "w") as of:
         of.write(quantization_exponents)
 
     return quantization_exponents

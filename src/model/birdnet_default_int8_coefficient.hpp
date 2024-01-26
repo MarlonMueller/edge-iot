@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "dl_constant.hpp"
 
-namespace birdnet_default_coefficient
+namespace birdnet_default_int8_coefficient
 {
     const dl::Filter<int8_t> *get_statefulpartitionedcall_sequential_conv2d_biasadd_filter();
     const dl::Bias<int8_t> *get_statefulpartitionedcall_sequential_conv2d_biasadd_bias();

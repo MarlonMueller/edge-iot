@@ -21,6 +21,39 @@ def birdnet_model(model_name:str, input_shape: Tuple[int, int], num_classes: int
     
 def get_birdnet_default(input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Get the default BirdNET model.
+
+    INFO:src.model.birdnet:Size of input: (308, 32)
+    
+    Model: "sequential"
+    _________________________________________________________________
+    Layer (type)                Output Shape              Param #   
+    =================================================================
+    conv2d (Conv2D)             (None, 102, 30, 16)       256       
+                                                                    
+    max_pooling2d (MaxPooling2  (None, 34, 30, 16)        0         
+    D)                                                              
+                                                                    
+    conv2d_1 (Conv2D)           (None, 32, 28, 16)        2320      
+                                                                    
+    max_pooling2d_1 (MaxPoolin  (None, 16, 14, 16)        0         
+    g2D)                                                            
+                                                                    
+    conv2d_2 (Conv2D)           (None, 14, 12, 8)         1160      
+                                                                    
+    max_pooling2d_2 (MaxPoolin  (None, 7, 6, 8)           0         
+    g2D)                                                            
+                                                                    
+    flatten (Flatten)           (None, 336)               0         
+                                                                    
+    dense (Dense)               (None, 64)                21568     
+                                                                    
+    dense_1 (Dense)             (None, 4)                 260       
+                                                                    
+    =================================================================
+    Total params: 25564 (99.86 KB)
+    Trainable params: 25564 (99.86 KB)
+    Non-trainable params: 0 (0.00 Byte)
+    _________________________________________________________________
     
     :return: default BirdNET model
     """

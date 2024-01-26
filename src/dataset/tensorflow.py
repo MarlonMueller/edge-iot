@@ -50,7 +50,7 @@ def get_dataset(data_dir: pathlib.Path, annotation_path: pathlib.Path, h5file:st
     train_size = int(train_test_split * dataset_size)
     test_size = dataset_size - train_size
     
-    train_dataset = dataset.take(train_size).shuffle(buffer_size=1024).batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+    train_dataset = dataset.take(train_size).batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     test_dataset = dataset.skip(train_size).batch(batch_size).prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
     
     logger.info(f"Train dataset size: {train_size}")
@@ -59,7 +59,7 @@ def get_dataset(data_dir: pathlib.Path, annotation_path: pathlib.Path, h5file:st
     return train_dataset, test_dataset, train_size, test_size
 
 
-def train_model(model_dir, model_name, model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dataset, num_epochs:int=20, batch_size:int=32):
+def train_model(model_dir, model_name, model, train_dataset: tf.data.Dataset, test_dataset: tf.data.Dataset, num_epochs:int=50, batch_size:int=32):
     """Train the model.
 
     :param model: tensorflow model
@@ -91,15 +91,16 @@ def train_model(model_dir, model_name, model, train_dataset: tf.data.Dataset, te
     tf_callbacks = [
         callbacks.EarlyStopping(
             restore_best_weights=True,
-            monitor="val_loss",
-            patience=5,
+            monitor="val_sparse_categorical_accuracy",
+            mode="max",
+            patience=3,
         ),
         callbacks.ModelCheckpoint(
             filepath=checkpoint_path,
             save_weights_only=True,
             save_best_only=True,
-            monitor="val_loss",
-            mode="min",
+            monitor="val_sparse_categorical_accuracy",
+            mode="max",
             period=1
         )
     ]
