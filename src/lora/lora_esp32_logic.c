@@ -15,6 +15,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_mac.h"
+#include "gps/gps.h"
 
 #include "esp_attr.h" // For all logic relatd to deep sleep. 
 #include "esp_sleep.h"
@@ -143,9 +144,24 @@ void initialize_comm(void)
 
     int total_input = 0;
 
+    // Get information
+
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
-    assemble_init_package(mac, 2.5234234, 25.23425543, tx_buffer, &total_input);
+
+    float latitude = 0;
+    float longitude = 0;
+    uint8_t hour = 0;
+    uint8_t minute = 0;
+    uint8_t second = 0;
+    bool valid_gps = false; 
+
+    get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid_gps);
+
+    if (valid_gps)
+        assemble_init_package(mac, latitude, longitude, tx_buffer, &total_input);
+    else 
+        assemble_init_package(mac, -1.0, -1.0, tx_buffer, &total_input);
 
     for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 

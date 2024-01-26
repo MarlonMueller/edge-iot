@@ -1,15 +1,27 @@
 dependencies:
-  espressif/esp-dsp:
-    component_hash: 46498b4973097cac29cfc6a692abef44375ffb7b00b73b3f354124efc626a154
+  espressif/esp_websocket_client:
+    component_hash: d8ccaffac2871dc756bdc08d7ff0bfa2daa7db3d94b0c7bf714b1962efe5e7c9
     source:
       service_url: https://api.components.espressif.com/
       type: service
+    version: 1.2.2
+  espressif/led_strip:
+    component_hash: 67d2744208e9c12d8b1992d21c979396c1726e57cb7e35e7c171c515be20f8ea
+    source:
+      service_url: https://api.components.espressif.com/
+      type: service
+    version: 2.5.3
+  espressif__esp-dsp:
+    component_hash: null
+    source:
+      path: C:\Users\ShaoJie\Documents\GitHub\edge-iot\components\espressif__esp-dsp
+      type: local
     version: 1.4.10
   idf:
     component_hash: null
     source:
       type: idf
     version: 5.1.2
-manifest_hash: 3d5655c2af9777f8956982dfb2436d788b1db246a274b86f0a93e0332e967a3b
+manifest_hash: 747d25b7ed5c9e39e9bec6bf59bed40b10c94ed7fa3e2783df475429fa75942f
 target: esp32s3
 version: 1.0.0
