@@ -18,7 +18,7 @@ const { requestHandler } = require('./helpers/requestHandler');
 
 
 //SET UP WEBSOCKET
-const WS_PORT = process.env.WS_PORT || 8888;
+const WS_PORT = process.env.WS_PORT || 3001;
 
 const wsServer = new WebSocket.Server({ port: WS_PORT }, () =>
   console.log(`WS server is listening at ws://localhost:${WS_PORT}`)

@@ -110,7 +110,7 @@
             sampleRate: 16000,
             // sampleRate: 44100,
         });
-        const WS_URL = 'ws:///172.20.10.2:8888'
+        const WS_URL = 'ws:///172.20.10.2:3001'
         var ws = new WebSocket(WS_URL)
         ws.binaryType = 'arraybuffer'
         ws.addEventListener('message', function (event) {
