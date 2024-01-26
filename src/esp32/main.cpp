@@ -21,6 +21,7 @@
 #include "audio/microphone.h"
 #include "audio/preprocess.h"
 #include "esp-led/esp_led.h"
+#include "lora/lora_esp32_logic.h"
 
 #include "dl_tool.hpp"
 
@@ -29,8 +30,6 @@
 #else
 #include "birdnet_default_int8.hpp"
 #endif
-
-#include "gps/gps.h"
 
 #define TAG "MAIN"
 
@@ -44,26 +43,6 @@ static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
 static int wakeup_lora_us = 20 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
-
-extern "C" void read_gps(void)
-{
-    // Use the get_gps_data function to get data
-    double latitude;
-    double longitude;
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-    bool valid;
-
-    // Call the function to get GPS data
-    get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid);
-
-    // Now, you can use the extracted GPS data as needed
-    printf("Valid: %d\n", valid);
-    printf("Latitude: %.05f\n", latitude);
-    printf("Longitude: %.05f\n", longitude);
-    printf("Time: %02d:%02d:%02d\n", hour, minute, second);
-}
 
 extern "C" void record_and_infer_sound()
 {
@@ -264,6 +243,8 @@ extern "C" void record_and_infer_sound()
 extern "C" void app_main(void)
 {
 
+    setup_lora_comm();
+
     // Enabling EXT0 button wakeup
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wakeup_pin, 1));
     ESP_ERROR_CHECK(rtc_gpio_pullup_dis(wakeup_pin));
@@ -288,7 +269,14 @@ extern "C" void app_main(void)
         case ESP_SLEEP_WAKEUP_TIMER: {
             ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
 
-            read_gps();
+            if (!is_initialized_comm()) {
+                ESP_LOGW(TAG, "LoRa not initialized, initializing...");
+                initialize_comm();
+            }
+
+            set_activation(2);
+            
+            send_data();
 
             struct timeval tv_now;
             gettimeofday(&tv_now, NULL);
@@ -301,6 +289,11 @@ extern "C" void app_main(void)
         case ESP_SLEEP_WAKEUP_UNDEFINED:
         default:
             ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_UNDEFINED");
+
+            if (!is_initialized_comm()) {
+                ESP_LOGW(TAG, "LoRa not initialized, initializing...");
+                initialize_comm();
+            }
             
             gettimeofday(&last_lora_wakeup, NULL);
             ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 

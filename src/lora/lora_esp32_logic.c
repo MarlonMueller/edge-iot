@@ -90,7 +90,7 @@ void setup_lora_comm()
     ESP_LOGI(TAG, "Execution of LoRa setup...");
 
     if (lora_init() == 0) {
-        ESP_LOGE(pcTaskGetName(NULL), "Does not recognize the module");
+        ESP_LOGE(TAG, "Does not recognize the module");
         while (1) {
             vTaskDelay(1);
         }
@@ -149,8 +149,8 @@ void initialize_comm(void)
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
 
-    float latitude = 0;
-    float longitude = 0;
+    double latitude = 0;
+    double longitude = 0;
     uint8_t hour = 0;
     uint8_t minute = 0;
     uint8_t second = 0;
@@ -158,10 +158,13 @@ void initialize_comm(void)
 
     get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid_gps);
 
+    ESP_LOGI(TAG, "Latitude: %f", latitude);
+    ESP_LOGI(TAG, "Longitude: %f", longitude);
+
     if (valid_gps)
-        assemble_init_package(mac, latitude, longitude, tx_buffer, &total_input);
+        assemble_init_package(mac, (float)latitude, (float)longitude, tx_buffer, &total_input);
     else 
-        assemble_init_package(mac, -1.0, -1.0, tx_buffer, &total_input);
+         assemble_init_package(mac, -1000.0, -1000.0, tx_buffer, &total_input);
 
     for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 
