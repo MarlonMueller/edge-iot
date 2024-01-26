@@ -23,7 +23,12 @@
 #include "esp-led/esp_led.h"
 
 #include "dl_tool.hpp"
-#include "birdnet_default.hpp"
+
+#ifdef QUANTIZATION_BITS_16
+#include "birdnet_default_int16.hpp"
+#else
+#include "birdnet_default_int8.hpp"
+#endif
 
 #define TAG "MAIN"
 
@@ -173,7 +178,11 @@ extern "C" void record_and_infer_sound()
     input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
     #endif
 
-    BIRDNET_DEFAULT model;
+    #ifdef QUANTIZATION_BITS_16
+    BIRDNET_DEFAULT_INT16 model;
+    #else
+    BIRDNET_DEFAULT_INT8 model;
+    #endif
 
     ESP_LOGI(TAG, "Initialized model...");
     #ifdef CONFIG_HEAP_LOG
