@@ -1,11 +1,77 @@
+#include <stdbool.h>
 #include "lora/lora_rpi.h"
 #include "lora/lora_package.h"
-#include <stdbool.h>
+#include <curl/curl.h>
 
 LoRa_ctl modem;
 
+void send_initialization(uint8_t local_id, float longitude, float latitude) {
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/node/put");
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        const char data[256];
+        sprintf(data, "{\r\n    \"_id\":\"%d\",\r\n    \"long\":\"%f\",\r\n    \"lat\":\"%f\"\r\n}", local_id, longitude, latitude);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+        res = curl_easy_perform(curl);
+    }
+    curl_easy_cleanup(curl);
+}
+
+void send_classification(uint8_t local_id, bool d1, bool d2, bool d3) {
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if(curl) {
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_easy_setopt(curl, CURLOPT_URL, "http://localhost:8080/birds/put");
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_DEFAULT_PROTOCOL, "https");
+        struct curl_slist *headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/json");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        const char data[256];
+
+        if (d1) {
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Water Rail\"\r\n}", local_id);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            res = curl_easy_perform(curl);
+        }
+
+        if (d2) {
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Cetti's Warbler\"\r\n}", local_id);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            res = curl_easy_perform(curl);
+        }
+
+        if (d3) {
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Cetti's Warbler\"\r\n}", local_id);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            res = curl_easy_perform(curl);
+        }
+            
+        if (!d1 && !d2 && !d3) {
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"No detection\"\r\n}", local_id);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+            res = curl_easy_perform(curl);
+        }
+    }
+    curl_easy_cleanup(curl);
+}
+
 void tx_f(txData *tx) {
-    printf("transmit done\n");
+    printf("transmit done.\n");
 
     LoRa_receive(&modem);
 }
@@ -27,6 +93,7 @@ void * rx_f(void *p){
 
         uint8_t local_id = 1;
 
+        send_initialization(local_id, longitude, latitude);
         assemble_init_ack_package(id, local_id, send_buf, &size);
 
         // Copy to buffer
@@ -46,6 +113,7 @@ void * rx_f(void *p){
         disassemble_nn_package(rx->buf, &local_id, &counter, &d1, &d2, &d3);
 
         printf("local_id: %d counter: %d d1: %d d2: %d d3: %d \n", local_id, counter, d1, d2, d3);
+        send_classification(local_id, d1, d2, d3);
 
         // TODO: Do stuff with the data.
 
@@ -95,7 +163,8 @@ int main(){
     LoRa_begin(&modem);
     LoRa_receive(&modem);
 
-    sleep(60);
+    while (1);
+    
     printf("end\n");
     LoRa_end(&modem);
 }

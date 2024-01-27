@@ -41,7 +41,7 @@ static int input_exponent = -7;
 
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
-static int wakeup_lora_us = 20 * 1000000L;
+static int wakeup_lora_us = 32 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
 
 extern "C" void record_and_infer_sound()
@@ -224,6 +224,20 @@ extern "C" void record_and_infer_sound()
 
     model.softmax.get_output().free_element();
 
+    // set activation for LoRa
+
+    int best_index = 0;
+    float best_value = probs[best_index];
+
+    for (int i=1; i<3; ++i) {
+        if (probs[i] > best_value) {
+            best_index = i;
+            best_value = probs[i];
+        }
+    }
+
+    set_activation(best_index);
+
     ESP_LOGI(TAG, "Freed model...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
@@ -273,8 +287,6 @@ extern "C" void app_main(void)
                 ESP_LOGW(TAG, "LoRa not initialized, initializing...");
                 initialize_comm();
             }
-
-            set_activation(2);
             
             send_data();
 
