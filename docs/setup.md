@@ -18,8 +18,15 @@ communication are:
 - RST. GPIO22
 - NSS. GPIO8
 
-Additionally, SPI has to be configured appropiately in Raspberry Pi. Further
-information may be found [here](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/).
+Additionally, the following configurations need to be made:
+
+- SPI has to be configured appropiately in Raspberry Pi. Further information may 
+  be found [here](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/).
+- `pigpio` library needs to be installed. To install this library, please follow
+  the instructions to download and install it in Raspberry Pi
+  [here](https://abyz.me.uk/rpi/pigpio/download.html). 
+
+
 
 The main function to be executed in Raspberry Pi is found in `src/rpi/main.c`.
 To compile this file, please execute this command in the terminal of Raspberry
