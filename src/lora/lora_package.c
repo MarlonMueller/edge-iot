@@ -113,18 +113,18 @@ void disassemble_nn_package(uint8_t *lora_package, uint8_t *local_id,
    *detection_3 = nn_classification & (1 << 5);   
 }
 
-void assemble_nn_ack_package(uint8_t local_id, uint8_t counter, 
+void assemble_nn_ack_package(uint8_t local_id, uint8_t timer, 
    uint8_t *lora_package, int *lora_package_size)
 {
    lora_package[0] = local_id;
-   lora_package[1] = counter;
+   lora_package[1] = timer;
 
    *lora_package_size = LORA_NN_ACK_PAYLOAD_SIZE;
 }
 
 void disassemble_nn_ack_package(uint8_t *lora_package, uint8_t *local_id, 
-    uint8_t *counter) 
+    uint8_t *timer) 
 {
    *local_id = lora_package[0];
-   *counter = lora_package[1];
+   *timer = lora_package[1];
 }
