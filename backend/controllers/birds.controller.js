@@ -8,6 +8,7 @@ const birdSchema = new mongoose.Schema(
     name: String,
     long: Number,
     lat: Number,
+    esp: String,
   },
   { timestamps: true }
 )
@@ -18,7 +19,7 @@ const put = async (req, res) => {
     
     const node = await Node.findOne({_id:nodeId})
 
-    const bird = new Bird({ name, long: node?.long, lat: node?.lat })
+    const bird = new Bird({ name, long: node?.long, lat: node?.lat, esp:nodeId })
     const newBird = await bird.save()
     return responseJSON(newBird)
   } catch (exception) {
