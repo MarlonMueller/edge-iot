@@ -156,7 +156,7 @@ void initialize_comm(void)
     uint8_t second = 0;
     bool valid_gps = false; 
 
-    get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid_gps);
+    // get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid_gps);
 
     ESP_LOGI(TAG, "Latitude: %f", latitude);
     ESP_LOGI(TAG, "Longitude: %f", longitude);
@@ -219,7 +219,7 @@ void initialize_comm(void)
     }
 }
 
-void send_data() 
+void send_data(uint8_t *timer_value) 
 {
     ESP_LOGI(TAG, "LoRa send_data execution...");
 
@@ -247,13 +247,16 @@ void send_data()
 
         // Wait for ACK
 
-        uint8_t local_counter = 0;
+        uint8_t local_timer = 0;
 
         flag = task_rx();
 
         if (flag) {
-            disassemble_nn_ack_package(rx_buffer, &local_id, &local_counter);
-            ESP_LOGI(TAG, "ID: %d - Counter: %d", local_id, local_counter);
+            disassemble_nn_ack_package(rx_buffer, &local_id, &local_timer);
+            ESP_LOGI(TAG, "ID: %d - Timer: %d", local_id, local_timer);
+
+            if (local_timer != 0)
+                *timer_value = local_timer;
         } else {
             ESP_LOGW(TAG, "No ACK received. Waiting...");
             vTaskDelay(PETITION_DELAY); // Avoid WatchDog alerts

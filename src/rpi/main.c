@@ -1,9 +1,32 @@
 #include <stdbool.h>
 #include "lora/lora_rpi.h"
 #include "lora/lora_package.h"
+
+#include <stdint.h>
+#include <time.h>
 #include <curl/curl.h>
 
 LoRa_ctl modem;
+
+uint8_t calculate_next_time() {
+    // Get the current time
+    time_t currentTime;
+    time(&currentTime);
+
+    struct tm* currentTimeStruct = localtime(&currentTime);
+
+    // Calculate the minutes until the next half past or hour
+    uint8_t minutesUntilNext;
+    if (currentTimeStruct->tm_min < 30) {
+        // Minutes until the next half past
+        minutesUntilNext = 30 - currentTimeStruct->tm_min;
+    } else {
+        // Minutes until the next hour
+        minutesUntilNext = 60 - currentTimeStruct->tm_min;
+    }
+
+    return minutesUntilNext;
+}
 
 void send_initialization(uint8_t local_id, float longitude, float latitude) {
     CURL *curl;
@@ -93,7 +116,7 @@ void * rx_f(void *p){
 
         uint8_t local_id = 1;
 
-        send_initialization(local_id, longitude, latitude);
+        // send_initialization(local_id, longitude, latitude);
         assemble_init_ack_package(id, local_id, send_buf, &size);
 
         // Copy to buffer
@@ -113,7 +136,7 @@ void * rx_f(void *p){
         disassemble_nn_package(rx->buf, &local_id, &counter, &d1, &d2, &d3);
 
         printf("local_id: %d counter: %d d1: %d d2: %d d3: %d \n", local_id, counter, d1, d2, d3);
-        send_classification(local_id, d1, d2, d3);
+        // send_classification(local_id, d1, d2, d3);
 
         // TODO: Do stuff with the data.
 
@@ -121,8 +144,9 @@ void * rx_f(void *p){
 
         uint8_t send_buf[255];
         int size;
+        uint8_t timer = calculate_next_time();
 
-        assemble_nn_ack_package(local_id, counter, send_buf, &size);
+        assemble_nn_ack_package(local_id, timer, send_buf, &size);
 
         // Copy to buffer
 

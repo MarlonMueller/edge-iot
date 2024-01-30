@@ -41,7 +41,7 @@ static int input_exponent = -7;
 
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
-static int wakeup_lora_us = 32 * 1000000L;
+static int wakeup_lora_us = 5 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
 
 extern "C" void record_and_infer_sound()
@@ -287,8 +287,11 @@ extern "C" void app_main(void)
                 ESP_LOGW(TAG, "LoRa not initialized, initializing...");
                 initialize_comm();
             }
+
+            uint8_t timer = 0;
             
-            send_data();
+            send_data(&timer);
+            ESP_LOGI(TAG, "Timer value: %d", timer);
 
             struct timeval tv_now;
             gettimeofday(&tv_now, NULL);
