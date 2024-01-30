@@ -3,12 +3,14 @@
 	import { fade } from 'svelte/transition';
 	import { SlideToggle } from '@skeletonlabs/skeleton';
 	import axios from 'axios';
-	import CaliforniaCondor from '$lib/California_Condor.jpg';
+	import WaterRail from '$lib/WaterRail.jpg';
+	import CettisWarbler from '$lib/CettisWarbler.jpg';
+	import CommonBlackbird from '$lib/CommonBlackbird.jpg';
 	import { MapLibre, DefaultMarker, Popup } from 'svelte-maplibre';
 
 	$: birds = [];
 	$: mapCenter = [11.6654128, 48.262547];
-	$: mapZoom = 10;
+	$: mapZoom = 13;
 
 	let map;
 	function scrollToTop() {
@@ -32,7 +34,6 @@
 								(newBird) => !birds.some((existingBird) => existingBird._id === newBird._id)
 							);
 							birds = [...birds, ...newBirds];
-							console.log('NEW BIRDS', newBirds);
 							// birds = birds
 						}
 					} else {
@@ -57,7 +58,7 @@
 
 <div class="container mx-auto flex justify-center" bind:this={map}>
 	<div style="width: 90%;">
-		<h1 class="mt-3 h1 text-center">Bird Watcher</h1>
+		<h1 class="mt-3 h1 text-center">BirdNet</h1>
 		<div class="my-3 flex justify-center">
 			<SlideToggle name="slider-label" active="bg-primary-500" bind:checked={fetchDataFromBackend}
 				>Fetch Data</SlideToggle
@@ -72,33 +73,59 @@
 				style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
 			>
 				{#each birds as bird}
-					{#if bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
+					{#if bird.name != 'No detection' && bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
 						<DefaultMarker lngLat={[bird.long, bird.lat]}>
-							<Popup offset={[0, -10]}>
-								<div class="text-lg font-bold text-black">{bird.name}</div>
+							<Popup open={bird.open} offset={[0, -10]}>
+								<div class="text-lg font-bold text-black text-center">
+									{bird.name}
+									{#if bird.name === 'Water Rail'}
+										<img src={WaterRail} alt="bird" style="width: 200px;" />
+									{:else if bird.name === "Cetti's Warbler"}
+										<img src={CettisWarbler} alt="bird" style="width: 200px;" />
+									{:else if bird.name === 'Common Blackbird'}
+										<img src={CommonBlackbird} alt="bird" style="width: 200px;" />
+									{/if}
+								</div>
 							</Popup></DefaultMarker
 						>
 					{/if}
 				{/each}
 			</MapLibre>
-			<div class="flex flex-col-reverse w-80 mx-auto">
+			<div class="flex flex-col-reverse w-100 ml-auto">
 				{#each birds as bird}
-					<div class="mt-6 card p-4 flex items-center flex-col" transition:fade={{ duration: 300 }}>
+					<div
+						class="mt-6 card p-4 flex items-center flex-col w-80"
+						transition:fade={{ duration: 300 }}
+					>
 						<h3 class="text-center mb-3">{bird.name}</h3>
-						<img src={CaliforniaCondor} alt="bird" style="width: 300px;" />
+						{#if bird.name === 'Water Rail'}
+							<img src={WaterRail} alt="bird" style="width: 300px;" />
+						{:else if bird.name === "Cetti's Warbler"}
+							<img src={CettisWarbler} alt="bird" style="width: 300px;" />
+						{:else if bird.name === 'Common Blackbird'}
+							<img src={CommonBlackbird} alt="bird" style="width: 300px;" />
+						{/if}
 
 						{#if bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
-							<h5 class="mt-3 text-center">Detected at:</h5>
-							<h5 class="text-center">{bird.long},{bird.lat}</h5>
-							<button
-								type="button"
-								class="btn variant-filled mt-2"
-								on:click={() => {
-									scrollToTop();
-									mapCenter = [bird.long, bird.lat];
-									mapZoom = 13;
-								}}>Find on map</button
-							>
+							{#if bird.name != 'No detection'}
+								<h5 class="mt-3 text-center">Detected at: Node {bird.esp}</h5>
+								<h5 class="text-center">{bird.long}, {bird.lat}</h5>
+								<button
+									type="button"
+									class="btn variant-filled mt-2"
+									on:click={() => {
+										// mapZoom = 13;
+										mapCenter = [bird.long, bird.lat];
+										birds.map((x) => {
+											if (bird._id != x.id) bird.open = false;
+										});
+										bird.open = true;
+									}}>Find on map</button
+								>
+							{:else}
+								<h5 class="mt-0 text-center">at:</h5>
+								<h5 class="text-center">{bird.long},{bird.lat}</h5>
+							{/if}
 						{/if}
 					</div>
 				{/each}
@@ -113,6 +140,7 @@
 	}
 	:global(.map) {
 		height: 70vh;
-		width: 40%;
+		width: 55%;
+		position: fixed;
 	}
 </style>
