@@ -21,9 +21,15 @@
 #include "audio/microphone.h"
 #include "audio/preprocess.h"
 #include "esp-led/esp_led.h"
+#include "lora/lora_esp32_logic.h"
 
 #include "dl_tool.hpp"
-#include "birdnet_default.hpp"
+
+#ifdef QUANTIZATION_BITS_16
+#include "birdnet_default_int16.hpp"
+#else
+#include "birdnet_default_int8.hpp"
+#endif
 
 #define TAG "MAIN"
 
@@ -35,7 +41,7 @@ static int input_exponent = -7;
 
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
-static int wakeup_lora_us = 20 * 1000000L;
+static int wakeup_lora_us = 32 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
 
 extern "C" void record_and_infer_sound()
@@ -173,7 +179,11 @@ extern "C" void record_and_infer_sound()
     input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
     #endif
 
-    BIRDNET_DEFAULT model;
+    #ifdef QUANTIZATION_BITS_16
+    BIRDNET_DEFAULT_INT16 model;
+    #else
+    BIRDNET_DEFAULT_INT8 model;
+    #endif
 
     ESP_LOGI(TAG, "Initialized model...");
     #ifdef CONFIG_HEAP_LOG
@@ -214,6 +224,20 @@ extern "C" void record_and_infer_sound()
 
     model.softmax.get_output().free_element();
 
+    // set activation for LoRa
+
+    int best_index = 0;
+    float best_value = probs[best_index];
+
+    for (int i=1; i<3; ++i) {
+        if (probs[i] > best_value) {
+            best_index = i;
+            best_value = probs[i];
+        }
+    }
+
+    set_activation(best_index);
+
     ESP_LOGI(TAG, "Freed model...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
@@ -232,6 +256,8 @@ extern "C" void record_and_infer_sound()
 
 extern "C" void app_main(void)
 {
+
+    setup_lora_comm();
 
     // Enabling EXT0 button wakeup
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(wakeup_pin, 1));
@@ -257,7 +283,12 @@ extern "C" void app_main(void)
         case ESP_SLEEP_WAKEUP_TIMER: {
             ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
 
-            //TODO - LORA
+            if (!is_initialized_comm()) {
+                ESP_LOGW(TAG, "LoRa not initialized, initializing...");
+                initialize_comm();
+            }
+            
+            send_data();
 
             struct timeval tv_now;
             gettimeofday(&tv_now, NULL);
@@ -270,6 +301,11 @@ extern "C" void app_main(void)
         case ESP_SLEEP_WAKEUP_UNDEFINED:
         default:
             ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_UNDEFINED");
+
+            if (!is_initialized_comm()) {
+                ESP_LOGW(TAG, "LoRa not initialized, initializing...");
+                initialize_comm();
+            }
             
             gettimeofday(&last_lora_wakeup, NULL);
             ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 

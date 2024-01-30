@@ -1,0 +1,3 @@
+all:
+    mkdir build && echo "build dir created" || echo
+    gcc -o build/main_rpi src/rpi/main.c src/lora/lora_rpi.c src/lora/lora_package.c -Iinclude/ -lpigpio -lrt -pthread -lm -lcurl

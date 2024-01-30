@@ -15,6 +15,7 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_mac.h"
+#include "gps/gps.h"
 
 #include "esp_attr.h" // For all logic relatd to deep sleep. 
 #include "esp_sleep.h"
@@ -89,7 +90,7 @@ void setup_lora_comm()
     ESP_LOGI(TAG, "Execution of LoRa setup...");
 
     if (lora_init() == 0) {
-        ESP_LOGE(pcTaskGetName(NULL), "Does not recognize the module");
+        ESP_LOGE(TAG, "Does not recognize the module");
         while (1) {
             vTaskDelay(1);
         }
@@ -143,9 +144,27 @@ void initialize_comm(void)
 
     int total_input = 0;
 
+    // Get information
+
     uint8_t mac[6];
     esp_efuse_mac_get_default(mac);
-    assemble_init_package(mac, 2.5234234, 25.23425543, tx_buffer, &total_input);
+
+    double latitude = 0;
+    double longitude = 0;
+    uint8_t hour = 0;
+    uint8_t minute = 0;
+    uint8_t second = 0;
+    bool valid_gps = false; 
+
+    get_gps_data(&latitude, &longitude, &hour, &minute, &second, &valid_gps);
+
+    ESP_LOGI(TAG, "Latitude: %f", latitude);
+    ESP_LOGI(TAG, "Longitude: %f", longitude);
+
+    if (valid_gps)
+        assemble_init_package(mac, (float)latitude, (float)longitude, tx_buffer, &total_input);
+    else 
+         assemble_init_package(mac, -1000.0, -1000.0, tx_buffer, &total_input);
 
     for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 
