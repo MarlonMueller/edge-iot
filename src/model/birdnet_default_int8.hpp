@@ -19,7 +19,7 @@ using namespace birdnet_default_int8_coefficient;
 
 // input_exponent: ['-7']
 
-// evaluation: acc_train: 88.02895322939867, acc_train_quant: 89.75501113585747, acc_test: 89.30957683741649, acc_test_quant: 88.19599109131403
+// evaluation: acc_train: 91.03563474387528, acc_train_quant: 92.37193763919822, acc_test: 91.0913140311804, acc_test_quant: 91.0913140311804
 
 class BIRDNET_DEFAULT_INT8 : public Model<int8_t>
 {
@@ -55,7 +55,7 @@ public:
         max_pooling2d(MaxPool2D<int8_t>({3,1}, PADDING_VALID, {}, 3, 1, "max_pooling2d")),
         
         conv2d_1(Conv2D<int8_t>(
-            -6,
+            -5,
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_activation(),
@@ -81,7 +81,7 @@ public:
         flatten(Flatten<int8_t>("flatten", false)),
         
         dense(FullyConnected<int8_t>(
-            -4,
+            -3,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
