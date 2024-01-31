@@ -96,40 +96,44 @@ void setup_lora_comm()
         }
     }
 
+#if CONFIG_169MHZ
+	ESP_LOGI(TAG, "Frequency is 169MHz");
+	lora_set_frequency(169e6); // 169MHz
+#elif CONFIG_433MHZ
+	ESP_LOGI(TAG, "Frequency is 433MHz");
+	lora_set_frequency(433e6); // 433MHz
+#elif CONFIG_470MHZ
+	ESP_LOGI(TAG, "Frequency is 470MHz");
+	lora_set_frequency(470e6); // 470MHz
+#elif CONFIG_866MHZ
+	ESP_LOGI(TAG, "Frequency is 866MHz");
+	lora_set_frequency(866e6); // 866MHz
+#elif CONFIG_915MHZ
+	ESP_LOGI(TAG, "Frequency is 915MHz");
+	lora_set_frequency(915e6); // 915MHz
+#elif CONFIG_OTHER
+	ESP_LOGI(TAG, "Frequency is %dMHz", CONFIG_OTHER_FREQUENCY);
+	long frequency = CONFIG_OTHER_FREQUENCY * 1000000;
+	lora_set_frequency(frequency);
+#endif
 
-    int cr = 5;
-    int bw = 7;
-    int sf = 7;
-    int pl = 8;
-    int freq = 868000000; // 868 MHz
-    int sw = 0x1a;
+    lora_set_coding_rate(CONFIG_CODING_RATE);
+    ESP_LOGI(TAG, "coding_rate=%d", lora_get_coding_rate());
 
-    lora_set_coding_rate(cr);
-    // lora_set_coding_rate(CONFIG_CODING_RATE);
-    // cr = lora_get_coding_rate();
-    ESP_LOGI(pcTaskGetName(NULL), "coding_rate=%d", cr);
+    lora_set_bandwidth(CONFIG_BANDWIDTH);
+    ESP_LOGI(TAG, "bandwidth=%d", lora_get_bandwidth());
 
-    lora_set_bandwidth(bw);
-    // lora_set_bandwidth(CONFIG_BANDWIDTH);
-    // int bw = lora_get_bandwidth();
-    ESP_LOGI(pcTaskGetName(NULL), "bandwidth=%d", bw);
+    lora_set_spreading_factor(CONFIG_SF_RATE);
+    ESP_LOGI(TAG, "spreading_factor=%d", lora_get_spreading_factor());
 
-    lora_set_spreading_factor(sf);
-    // lora_set_spreading_factor(CONFIG_SF_RATE);
-    // int sf = lora_get_spreading_factor();
-    ESP_LOGI(pcTaskGetName(NULL), "spreading_factor=%d", sf);
+    lora_set_preamble_length(CONFIG_PREAMBLE_LENGTH);
+    ESP_LOGI(TAG, "preamble_length=%ld", lora_get_preamble_length());
 
-    lora_set_preamble_length(pl);
-    ESP_LOGI(pcTaskGetName(NULL), "preamble_length=%d", pl);
-
-    lora_set_frequency(freq);
-    ESP_LOGI(pcTaskGetName(NULL), "frequency=%d", freq);
-
-    lora_set_sync_word(sw);
-    ESP_LOGI(pcTaskGetName(NULL), "sync_word=0x%02x", sw);
+    lora_set_sync_word(CONFIG_SYNC_WORD);
+    ESP_LOGI(TAG, "sync_word=0x%02x", CONFIG_SYNC_WORD);
 
     lora_enable_crc();
-    ESP_LOGI(pcTaskGetName(NULL), "crc_enabled");
+    ESP_LOGI(TAG, "crc_enabled");
 }
 
 void initialize_comm(void) 

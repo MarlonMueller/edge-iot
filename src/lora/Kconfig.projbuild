@@ -157,5 +157,19 @@ menu "Application Configuration"
 		default 7
 		help
 			Spreading Factor.
+			
+	config PREAMBLE_LENGTH
+		depends on ADVANCED
+		int "Preamble Length"
+		range 6 65535
+		default 8
+		help
+			Preamble Length.
 
+	config SYNC_WORD
+		depends on ADVANCED
+		hex "Sync Word"
+		default 0x1a
+		help
+			Sync Word.
 endmenu 
