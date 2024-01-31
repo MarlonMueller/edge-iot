@@ -19,7 +19,7 @@ using namespace birdnet_default_int8_coefficient;
 
 // input_exponent: ['-7']
 
-// evaluation: acc_train: 88.35153406136246, acc_train_quant: 86.21944877795111, acc_test: 88.35758835758836, acc_test_quant: 83.78378378378379
+// evaluation: acc_train: 88.02895322939867, acc_train_quant: 89.75501113585747, acc_test: 89.30957683741649, acc_test_quant: 88.19599109131403
 
 class BIRDNET_DEFAULT_INT8 : public Model<int8_t>
 {
@@ -81,7 +81,7 @@ public:
         flatten(Flatten<int8_t>("flatten", false)),
         
         dense(FullyConnected<int8_t>(
-            -4,
+            -3,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
