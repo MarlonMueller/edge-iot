@@ -24,16 +24,16 @@ extern "C" {
 void setup_lora_comm();
 
 /**
+ * @brief Initialize communication protocol.
+ */
+void initialize_comm();
+
+/**
  * @brief Return the state of the connection with LoRa module.
  * 
  * @return True if the connection is initialized, false otherwise.
  */
 bool is_initialized_comm();
-
-/**
- * @brief Initialize communication protocol.
- */
-void initialize_comm();
 
 /**
  * @brief Send the detected classification of time frame to RPi.

@@ -132,12 +132,6 @@ void setup_lora_comm()
     ESP_LOGI(pcTaskGetName(NULL), "crc_enabled");
 }
 
-bool is_initialized_comm() 
-{
-    return lora_is_initialized;
-
-}
-
 void initialize_comm(void) 
 {
     ESP_LOGI(TAG, "LoRa initialization execution...");
@@ -217,6 +211,11 @@ void initialize_comm(void)
         detection.d2 = false;
         detection.d3 = false;
     }
+}
+
+bool is_initialized_comm() 
+{
+    return lora_is_initialized;
 }
 
 void send_data(uint8_t *timer_value) 
