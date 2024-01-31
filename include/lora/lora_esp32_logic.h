@@ -15,7 +15,7 @@ extern "C" {
 void setup_lora_comm();
 bool is_initialized_comm();
 void initialize_comm();
-void send_data();
+void send_data(uint8_t *timer_value);
 void set_activation(int idx);
 
 #ifdef __cplusplus

@@ -35,7 +35,7 @@ Example: 00000000 00000100 110 means:
  0                   1
  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|    Local ID   |    Counter    |
+|    Local ID   |     Timer     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 */
@@ -131,12 +131,12 @@ void disassemble_nn_package(uint8_t *lora_package, uint8_t *local_id,
  * @brief Creates a LoRa NN output package ACK.
  * 
  * @param local_id Local ID of the original device.
- * @param counter Counter of package.
+ * @param timer Timer of package.
  * 
  * @param lora_package Pointer to the LoRa package.
  * @param lora_package_size Pointer to the LoRa package size.
 */
-void assemble_nn_ack_package(uint8_t local_id, uint8_t counter, 
+void assemble_nn_ack_package(uint8_t local_id, uint8_t timer, 
     uint8_t *lora_package, int *lora_package_size);
 
 
@@ -145,10 +145,10 @@ void assemble_nn_ack_package(uint8_t local_id, uint8_t counter,
  * 
  * @param lora_package Pointer to the LoRa package.
  * @param local_id Pointer to local ID of the original device.
- * @param counter Pointer to counter of the original device.    
+ * @param timer Pointer to timer of the original device.    
 */
 void disassemble_nn_ack_package(uint8_t *lora_package, uint8_t *local_id, 
-    uint8_t *counter);
+    uint8_t *timer);
 
 #ifdef __cplusplus
 }

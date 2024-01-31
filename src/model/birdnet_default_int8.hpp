@@ -81,7 +81,7 @@ public:
         flatten(Flatten<int8_t>("flatten", false)),
         
         dense(FullyConnected<int8_t>(
-            -3,
+            -4,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
