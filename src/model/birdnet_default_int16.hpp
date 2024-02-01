@@ -19,7 +19,7 @@ using namespace birdnet_default_int16_coefficient;
 
 // input_exponent: ['-15']
 
-// evaluation: acc_train: 91.03563474387528, acc_train_quant: 91.03563474387528, acc_test: 91.0913140311804, acc_test_quant: 91.0913140311804
+// evaluation: acc_train: 90.92009685230025, acc_train_quant: 90.92009685230025, acc_test: 89.61352657004831, acc_test_quant: 89.61352657004831
 
 class BIRDNET_DEFAULT_INT16 : public Model<int16_t>
 {
@@ -55,7 +55,7 @@ public:
         max_pooling2d(MaxPool2D<int16_t>({3,1}, PADDING_VALID, {}, 3, 1, "max_pooling2d")),
         
         conv2d_1(Conv2D<int16_t>(
-            -13,
+            -14,
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_activation(),
@@ -67,7 +67,7 @@ public:
         max_pooling2d_1(MaxPool2D<int16_t>({2,2}, PADDING_VALID, {}, 2, 2, "max_pooling2d_1")),
         
         conv2d_2(Conv2D<int16_t>(
-            -13,
+            -12,
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_2_biasadd_activation(),
@@ -81,7 +81,7 @@ public:
         flatten(Flatten<int16_t>("flatten", false)),
         
         dense(FullyConnected<int16_t>(
-            -11,
+            -12,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
@@ -89,14 +89,14 @@ public:
         ),
         
         dense_1(FullyConnected<int16_t>(
-            -10,
+            -11,
             get_fused_gemm_1_filter(),
             get_fused_gemm_1_bias(),
             NULL,
             true, "dense_1")
         ),
         
-        softmax(Softmax<int16_t>(-14, "softmax")){}
+        softmax(Softmax<int16_t>(-15, "softmax")){}
         
 
 
