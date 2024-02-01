@@ -30,7 +30,7 @@ uint8_t calculate_next_time() {
 }
 
 // Function to find the value associated with a key in a JSON string
-bool find_json_value(const char* jsonStr, const char* key, int* value) {
+bool find_json_value(const char* jsonStr, const char* key, uint8_t* value) {
     const char* keyStart = strstr(jsonStr, key);
 
     if (keyStart == NULL) {
@@ -89,8 +89,7 @@ void send_initialization(uint8_t *mac, float longitude, float latitude, uint8_t 
         res = curl_easy_perform(curl);
 
         printf("Response data: %s\n", response_data);
-
-        *local_id = find_json_value(response_data, "__v", local_id);
+        find_json_value(response_data, "\"localId\"", local_id);
 
         printf("Local ID assigned: %d\n", *local_id);
     }
@@ -160,10 +159,10 @@ void * rx_f(void *p){
         uint8_t send_buf[255];
         int size;
 
-        uint8_t local_id = 1;
+        uint8_t assigned_id = 0;
 
-        send_initialization(id, longitude, latitude, &local_id);
-        assemble_init_ack_package(id, local_id, send_buf, &size);
+        send_initialization(id, longitude, latitude, &assigned_id);
+        assemble_init_ack_package(id, assigned_id, send_buf, &size);
 
         // Copy to buffer
 
