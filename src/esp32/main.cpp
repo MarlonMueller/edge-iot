@@ -41,7 +41,7 @@ static int input_exponent = -7;
 
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
-static int wakeup_lora_us = 5 * 1000000L;
+static int wakeup_lora_us = 20 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
 
 extern "C" void record_and_infer_sound()
@@ -314,6 +314,7 @@ extern "C" void app_main(void)
             ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 
     }
 
-    ESP_LOGI(TAG, "Entering deep sleep...");
+    ESP_LOGI(TAG, "Entering deep sleep in 10 seconds...");
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
     esp_deep_sleep_start();
 }
