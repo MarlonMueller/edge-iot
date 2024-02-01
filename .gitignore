@@ -37,3 +37,4 @@ heaptrace-gdbinit
 partition_table/
 managed_components/
 dependencies.lock
+sdkconfig
