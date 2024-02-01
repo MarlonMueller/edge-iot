@@ -17,8 +17,8 @@
 		map.scrollIntoView();
 	}
 	let fetchDataFromBackend;
-	let backendLink = 'http://172.20.10.2:8080';
-	// let backendLink = 'http://localhost:8080';
+	// let backendLink = 'http://172.20.10.2:8080';
+	let backendLink = 'http://localhost:8080';
 	onMount(async () => {
 		const fetchData = async () => {
 			try {
