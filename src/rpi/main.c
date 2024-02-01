@@ -1,9 +1,10 @@
+#include <stdio.h>
 #include <stdbool.h>
-#include "lora/lora_rpi.h"
-#include "lora/lora_package.h"
-
 #include <stdint.h>
 #include <time.h>
+
+#include "lora/lora_rpi.h"
+#include "lora/lora_package.h"
 #include <curl/curl.h>
 
 LoRa_ctl modem;
@@ -28,7 +29,37 @@ uint8_t calculate_next_time() {
     return minutesUntilNext;
 }
 
-void send_initialization(uint8_t local_id, float longitude, float latitude) {
+// Function to find the value associated with a key in a JSON string
+bool find_json_value(const char* jsonStr, const char* key, int* value) {
+    const char* keyStart = strstr(jsonStr, key);
+
+    if (keyStart == NULL) {
+        // Key not found
+        return 0;
+    }
+
+    // Move to the end of the key
+    keyStart += strlen(key);
+
+    // Find the first digit of the value
+    while (*keyStart && (*keyStart < '0' || *keyStart > '9'))
+        keyStart++;
+
+    // Convert the value to an integer
+    sscanf(keyStart, "%d", value);
+
+    return true;
+}
+
+// Callback function to handle the response data
+size_t write_callback(void* contents, size_t size, size_t nmemb, char* output) {
+    size_t total_size = size * nmemb;
+    strcat(output, (char*)contents);
+    return total_size;
+}
+
+
+void send_initialization(uint8_t *mac, float longitude, float latitude, uint8_t *local_id) {
     CURL *curl;
     CURLcode res;
     curl = curl_easy_init();
@@ -44,9 +75,24 @@ void send_initialization(uint8_t local_id, float longitude, float latitude) {
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         const char data[256];
-        sprintf(data, "{\r\n    \"_id\":\"%d\",\r\n    \"long\":\"%f\",\r\n    \"lat\":\"%f\"\r\n}", local_id, longitude, latitude);
+
+        sprintf(data, "{\r\n    \"_id\":\"%d:%d:%d:%d:%d:%d\",\r\n    \"long\":\"%f\",\r\n    \"lat\":\"%f\"\r\n}", 
+            mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], longitude, latitude);
+
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
+
+        char response_data[4096] = "";  // Adjust the buffer size as needed
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, response_data);
+
         res = curl_easy_perform(curl);
+
+        printf("Response data: %s\n", response_data);
+
+        *local_id = find_json_value(response_data, "__v", local_id);
+
+        printf("Local ID assigned: %d\n", *local_id);
     }
     curl_easy_cleanup(curl);
 }
@@ -116,7 +162,7 @@ void * rx_f(void *p){
 
         uint8_t local_id = 1;
 
-        // send_initialization(local_id, longitude, latitude);
+        send_initialization(id, longitude, latitude, &local_id);
         assemble_init_ack_package(id, local_id, send_buf, &size);
 
         // Copy to buffer
