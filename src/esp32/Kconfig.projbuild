@@ -2,7 +2,7 @@ menu "Custom"
 
     config HEAP_LOG
         bool "Enable heap logging"
-        default y
+        default n
         help
             Enable heap logging for debugging purposes.
 
