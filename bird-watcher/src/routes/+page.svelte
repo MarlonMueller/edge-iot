@@ -3,9 +3,9 @@
 	import { fade } from 'svelte/transition';
 	import { SlideToggle } from '@skeletonlabs/skeleton';
 	import axios from 'axios';
-	import WaterRail from '$lib/WaterRail.jpg';
+	import WaterRail from '$lib/WaterRail.png';
 	import CettisWarbler from '$lib/CettisWarbler.jpg';
-	import CommonBlackbird from '$lib/CommonBlackbird.jpg';
+	import CommonSandpiper from '$lib/CommonSandpiper.jpg';
 	import { MapLibre, DefaultMarker, Popup } from 'svelte-maplibre';
 
 	$: birds = [];
@@ -82,8 +82,8 @@
 										<img src={WaterRail} alt="bird" style="width: 200px;" />
 									{:else if bird.name === "Cetti's Warbler"}
 										<img src={CettisWarbler} alt="bird" style="width: 200px;" />
-									{:else if bird.name === 'Common Blackbird'}
-										<img src={CommonBlackbird} alt="bird" style="width: 200px;" />
+									{:else if bird.name === 'Common Sandpiper'}
+										<img src={CommonSandpiper} alt="bird" style="width: 200px;" />
 									{/if}
 								</div>
 							</Popup></DefaultMarker
@@ -102,8 +102,8 @@
 							<img src={WaterRail} alt="bird" style="width: 300px;" />
 						{:else if bird.name === "Cetti's Warbler"}
 							<img src={CettisWarbler} alt="bird" style="width: 300px;" />
-						{:else if bird.name === 'Common Blackbird'}
-							<img src={CommonBlackbird} alt="bird" style="width: 300px;" />
+						{:else if bird.name === 'Common Sandpiper'}
+							<img src={CommonSandpiper} alt="bird" style="width: 300px;" />
 						{/if}
 
 						{#if bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
