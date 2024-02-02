@@ -17,7 +17,7 @@ const put = async (req, res) => {
   const { name, nodeId } = req.body
   try {
     
-    const node = await Node.findOne({_id:nodeId})
+    const node = await Node.findOne({localId:nodeId})
 
     const bird = new Bird({ name, long: node?.long, lat: node?.lat, esp:nodeId })
     const newBird = await bird.save()
