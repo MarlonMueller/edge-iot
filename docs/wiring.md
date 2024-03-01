@@ -56,3 +56,35 @@ On the other hand, for GPS module, the following pins were required.
 | RX      | GPIO17  |
 | TX      | GPIO18  |
 | GND     | GND     |
+
+## Change wiring
+
+> [!CAUTION] 
+> Do not change the wiring unless it is strictly necessary. Be specially
+> careful with boards pin layouts. There could be some pins that, at
+> initialization, are not properly configured and could fry the components.
+
+The change of the default wiring pins for the different components is possible.
+Please, make sure that, if you decide to change wiring, that all pins from
+the previous table are used. Otherwise, the result may be unexpected (even not
+working at all). 
+
+For RPI, the pins for RST and DIO0 may be changed by assigning the
+attributes `modem.eth.resetGpioN` and `modem.eth.dio0GpioN` at [this source file](../src/rpi/main.c). 
+
+On the other hand, for ESP, the wiring of the different pins is managed using
+ESP-IDF. Instead of directly changing the variables manually, the best option
+is to change them using the corresponding framework. If you have successfully
+followed the instructions for [Getting Started in README](../README.md#getting-started),
+in the root directory of this repository in a DEV machine, write 
+the following command in a terminal with `idf.py` available:
+
+```sh
+idf.py menuconfig
+```
+
+Then navigate to `LoRa Configuration`. An interface shall be displayed with 
+the corresponding associations between ESP pins and SX1278 pins, as shown
+in the following picture.
+
+![Screenshot of LoRa Configuration layout](../assets/lora_menuconfig.png)
