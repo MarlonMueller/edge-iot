@@ -103,7 +103,7 @@ worry, we won't hack your RPI :laughing:). If you forgot to use `sudo` mode,
 after executing the binary file a warning message should appear. 
 
 ```sh
-makefile -f Makefile.RPi
+make -f Makefile.RPi
 sudo ./build/main_rpi
 ```
 
