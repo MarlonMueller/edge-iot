@@ -1,6 +1,4 @@
-# BirdNet
-
-![Architecture Design](assets/architecture_design.png)
+![Header](assets/header.png)
 
 
 This repository contains an implementation of the system BirdNet, a novel IoT
@@ -12,11 +10,10 @@ privacy.
 
 __Table of Contents__
 
-- [BirdNet](#birdnet)
-  - [Hardware](#hardware)
-  - [Getting Started](#getting-started)
+- [Hardware](#hardware)
+- [Getting Started](#getting-started)
 
-## Hardware
+# Hardware
 
 The equipment list used for the implementation of this project are 
 listed as follows:
@@ -38,7 +35,7 @@ information to this module. For this central node, there must be:
 for this repository. Preferrably, it should use a Linux-based OS, such as 
 Ubuntu. 
 
-## Getting Started
+# Getting Started
 
 Before running the code contained in this repository, the following 
 __prerrequisites__ need to be fulfilled. The notation used at the beginning of
