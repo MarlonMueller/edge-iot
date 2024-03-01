@@ -24,9 +24,9 @@
 #define MAX_COUNTER 95 
 #define MAX_BUFFER_SIZE 256
 
-#define PETITION_DELAY (100 / portTICK_PERIOD_MS) // ms between petitions
-#define NEXT_INIT_RETRY (300 / portTICK_PERIOD_MS) // ms between init retries
-#define NEXT_PERIODIC_DATA (500 / portTICK_PERIOD_MS) // ms between periodic data
+#define PETITION_DELAY (500 / portTICK_PERIOD_MS) // ms between petitions
+#define NEXT_INIT_RETRY (1000 / portTICK_PERIOD_MS) // ms between init retries
+#define NEXT_PERIODIC_DATA (1200 / portTICK_PERIOD_MS) // ms between periodic data
 
 typedef struct {
     bool d1, d2, d3;
@@ -162,7 +162,7 @@ void initialize_comm(void)
     if (valid_gps)
         assemble_init_package(mac, (float)latitude, (float)longitude, tx_buffer, &total_input);
     else 
-         assemble_init_package(mac, -1000.0, -1000.0, tx_buffer, &total_input);
+         assemble_init_package(mac, 48.2767953, 11.6771251, tx_buffer, &total_input);
 
     for (int i=0; i<NUM_TRIES && !lora_is_initialized; ++i) {
 
@@ -255,11 +255,19 @@ void send_data(uint8_t *timer_value)
         flag = task_rx();
 
         if (flag) {
-            disassemble_nn_ack_package(rx_buffer, &local_id, &local_timer);
-            ESP_LOGI(TAG, "ID: %d - Timer: %d", local_id, local_timer);
+            uint8_t the_local_id = 0;
+            disassemble_nn_ack_package(rx_buffer, &the_local_id, &local_timer);
 
-            if (local_timer != 0)
-                *timer_value = local_timer;
+            if (the_local_id == local_id) {
+                ESP_LOGI(TAG, "ID: %d - Timer: %d", local_id, local_timer);
+
+                if (local_timer != 0)
+                    *timer_value = local_timer;
+            } else {
+                ESP_LOGW(TAG, "ID does not match. Waiting...");
+                flag = false;
+            }
+            
         } else {
             ESP_LOGW(TAG, "No ACK received. Waiting...");
             vTaskDelay(PETITION_DELAY); // Avoid WatchDog alerts

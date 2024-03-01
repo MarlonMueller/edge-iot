@@ -103,6 +103,7 @@ extern "C" void record_and_infer_sound()
     log_heap();
     #endif
     
+    
     mfcc(audio_buffer, AUDIO_BUFFER_SIZE, &mfcc_output, &num_frames);
     free_mfcc_module();
     free(audio_buffer);
@@ -209,10 +210,10 @@ extern "C" void record_and_infer_sound()
             class_name = "Water Rail";
             break;
         case 1:
-            class_name = "Cetti's Warbler";
+            class_name = "Common Sandpiper";
             break;
         case 2:
-            class_name = "Common Blackbird";
+            class_name = "Cetti's Warbler";
             break;
         case 3:
             class_name = "Other";
@@ -222,14 +223,12 @@ extern "C" void record_and_infer_sound()
         ESP_LOGI(TAG, "%s: %f %%", class_name, probs[i] * 100);
     }
 
-    model.softmax.get_output().free_element();
-
     // set activation for LoRa
 
     int best_index = 0;
     float best_value = probs[best_index];
 
-    for (int i=1; i<3; ++i) {
+    for (int i=1; i<4; ++i) {
         if (probs[i] > best_value) {
             best_index = i;
             best_value = probs[i];
@@ -237,6 +236,8 @@ extern "C" void record_and_infer_sound()
     }
 
     set_activation(best_index);
+
+    model.softmax.get_output().free_element();
 
     ESP_LOGI(TAG, "Freed model...");
     #ifdef CONFIG_HEAP_LOG
@@ -314,7 +315,7 @@ extern "C" void app_main(void)
             ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 
     }
 
-    ESP_LOGI(TAG, "Entering deep sleep in 10 seconds...");
-    vTaskDelay(10000 / portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG, "Entering deep sleep in 10 seconds...");
+    // vTaskDelay(10000 / portTICK_PERIOD_MS);
     esp_deep_sleep_start();
 }

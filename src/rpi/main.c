@@ -118,7 +118,7 @@ void send_classification(uint8_t local_id, bool d1, bool d2, bool d3) {
         }
 
         if (d2) {
-            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Cetti's Warbler\"\r\n}", local_id);
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Common Sandpiper\"\r\n}", local_id);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             res = curl_easy_perform(curl);
         }
@@ -181,7 +181,7 @@ void * rx_f(void *p){
         disassemble_nn_package(rx->buf, &local_id, &counter, &d1, &d2, &d3);
 
         printf("local_id: %d counter: %d d1: %d d2: %d d3: %d \n", local_id, counter, d1, d2, d3);
-        // send_classification(local_id, d1, d2, d3);
+        send_classification(local_id, d1, d2, d3);
 
         // TODO: Do stuff with the data.
 
