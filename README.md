@@ -128,6 +128,9 @@ names in your DEV may be different from those listed in the tutorial.
 and flash it into the microSD card. Make sure you may use `sudo` command, as
 it is required for the first package in the following bullet point. 
 
+- For RPI, make sure that SPI is configured appropiately. Further information
+may be found [here](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/).
+
 - For RPI, install the library 
 [pigpio](https://abyz.me.uk/rpi/pigpio/), as it will be required to interact 
 with LoRa module, and make sure to have installed the library 
