@@ -1,82 +1,110 @@
-# edge-iot
+# BirdNet
+
+![Architecture Design](assets/architecture_design.png)
+
+
+This repository contains an implementation of the system BirdNet, a novel IoT
+system for bird monitoring in the wild using Machine Learning. This system 
+exploits the proximity of detection nodes to bird sound sources to map the 
+detected bird species to  physical locations. As only classification data is 
+sent (not audio data), this system offers the additional advantage of data 
+privacy. 
+
+__Table of Contents__
+
+- [BirdNet](#birdnet)
+  - [Hardware](#hardware)
+  - [Getting Started](#getting-started)
+
+## Hardware
+
+The equipment list used for the implementation of this project are 
+listed as follows:
+
+- **ESP32-S3-DevKitC-1 (ESP)**. It will serve as edge nodes to capture data. 
+More than one ESP32 may be used (in fact, that is what should happen). For each
+ESP32 device, there must be:
+    - A LoRa module model **SX1278**. 
+    - A microphone module model **TODO**.
+    - A GPS module model **TODO**.
+
+- **Raspberry Pi 3 Model B+ (RPI)**. It will be used as the central node of the
+architecture. the different ESP32 will periodically send classification 
+information to this module. For this central node, there must be:
+    - A LoRa module model **SX1278**. 
+    - A microSD to store the OS. We have used a MicroSD of 32 GB. 
+
+- **Development device (DEV)**. It will be used to develop, build and flash code 
+for this repository. Preferrably, it should use a Linux-based OS, such as 
+Ubuntu. 
 
 ## Getting Started
 
-```
-conda create -n edge-iot python=3.8.18
-conda activate edge-iot
-pip install -r requirements.txt
-```
+Before running the code contained in this repository, the following 
+__prerrequisites__ need to be fulfilled. The notation used at the beginning of
+each bullet point is shown in [Hardware](#hardware).
 
+- Make sure to have the [Hardware](#hardware) required for this project.
 
-## Directory Structure
+- For ESP and RPI, make sure to have wired the different components. The default
+Wiring may be found here TODO. If you have made changes to code regarding the wiring 
+of some component, wire the physical cables accordingly. 
 
-```markdown
+- For DEV, install the framework 
+[ESP-IDF](https://github.com/espressif/esp-idf). The code contained in this 
+repository was succesfully built and developed using the version `v5.1.2`. Make 
+sure to be able to use `idf.py`. To do so, open a terminal and run the 
+following code (if you can see your version of ESP-IDF, then you can use it):
+```sh
+idf.py --version
+``` 
 
-./edge-iot
-├── .github/
-│   └── workflows/
-│       └── continuous_integration.yml
-├── assets/
-├── config/
-│   └── xeno-canto.yaml
-├── data/
-│   ├── audio/
-│   └── img/
-├── docs/
-│   ├── slides/
-│   └── reports/
-├── include/
-│   └── audio/
-│       └── preprocess.h
-├── models/
-│   ├── cpp/
-│   ├── onnx/
-│   └── torch/
-├── src/
-│   ├── _example
-│   ├── audio/
-│   ├── dataset/
-│   ├── esp32/
-│   ├── interface/
-│   ├── model/
-│   ├── procedures/
-│   ├── utils/
-├── tests/
-├── .gitignore
-├── .pre-commit-config.yaml
-├── CMakeLists.txt
-├── README.md
-├── dependencies.lock
-├── main.py
-├── requirements.txt
-├── requirements_idf.txt
+- For DEV, make sure that you can use the tool `idf.py` to flash
+one of your ESP32 via USB. A
+[Hello World project in ESP-IDF official documentation](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/windows-setup.html#get-started-windows-first-steps)
+may be useful for starters. Read it carefully and remember that the connection
+names in your DEV may be different from those listed in the tutorial. 
+
+- For RPI, install the [Raspberry Pi OS](https://www.raspberrypi.com/software/)
+and flash it into the microSD card. Make sure you may use `sudo` command, as
+it is required for the first package in the following bullet point. 
+
+- For RPI, install the library 
+[pigpio](https://abyz.me.uk/rpi/pigpio/), as it will be required to interact 
+with LoRa module, and make sure to have installed the library 
+[curl for C++](https://raspberry-projects.com/pi/programming-in-c/networking/curl/adding-curl-to-your-project),
+as it will be required to connect with backend and dashboard. 
+
+- For DEV and RPI, install the [git utility](https://git-scm.com/downloads). 
+
+Once you have checked that you fulfill all the prerrequisites, follow these
+steps to have a functional demo of BirdNet:
+
+1. Clone this repository in both DEV and RPI:
+
+```sh
+git clone https://github.com/MarlonMueller/edge-iot.git
 ```
 
+2. In DEV device, move to the cloned repo directory. Flash the ESP code into
+each of your edge nodes by executing the command below. To test whether the
+code was correctly flashed into the devices, see the output opbtained in
+the terminal. If it has failed, a message error should appear. Otherwise, you
+can already visualize the first lines of code. 
 
-## Xeno-Canto Interface
+```sh
+idf.py build flash monitor
+```
 
-Files are downloaded to data/
+3. For the RPI, move to the cloned repo directory. A `Makefile` is specifically
+designed to automate the compilation of the file for Raspberry Pi. Then,
+you just need to execute the generated binary file in `sudo` mode. (Do not
+worry, we won't hack your RPI :laughing:). If you forgot to use `sudo` mode, 
+after executing the binary file a warning message should appear. 
 
-File naming convention is as follows:
-```x-[x_id]-[cls_id]-[slice].{mp3/wav}```
-where:
-- x_id is the xeno-canto id
-- cls_id is the class id
-- slice is the slice of the file (0 for now)
+```sh
+makefile -f Makefile.RPi
+sudo ./build/main_rpi
+```
 
-The download also generates a annoation file in data/annotations.csv; columns:
-
-- file_name is the file name as above
-- class_id is the class id
-- class is the class name
-- xeno_id is the xeno-canto id
-- slice is the slice of the file (0 for now)
-- quality is the quality of the recording
-- length is the length of the recording
-- sampling_rate is the sampling rate of the recording
-
-
-## Architecture
-
-![Architecture Design](assets/architecture_design.png)
+4. TODO (WEB)
