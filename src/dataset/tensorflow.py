@@ -12,7 +12,7 @@ from src.audio import audio_processing
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def get_dataset(data_dir: pathlib.Path, annotation_path: pathlib.Path, h5file:str, mfcc_shape: Tuple[int, int], train_test_split:float =0.8, batch_size:int =32) -> tf.data.Dataset:
+def get_dataset(data_dir: pathlib.Path, annotation_path: pathlib.Path, h5file:str, mfcc_shape: Tuple[int, int], train_test_split:float =0.80, batch_size:int =32) -> tf.data.Dataset:
     """Create a TensorFlow dataset from the preprocessed audio data.
 
     :param data_dir: data directory

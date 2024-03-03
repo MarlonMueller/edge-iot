@@ -29,8 +29,6 @@ DURATION = 5
 NUM_SPECIES = 3
 SAMPLE_RATE = 16000
 
-MODEL_NAME = "birdnet_default"
-
 DATA_DIR = PATH / "data"
 AUDIO_DIR = DATA_DIR / "audio"
 ANNOTATION_PATH = DATA_DIR / "annotation.csv"
@@ -67,7 +65,7 @@ def download_audio():
             os.remove(DATA_DIR / H5FILE)
     
         species_map = xeno_canto.download_xeno_canto_audio(
-            query, NUM_SPECIES, AUDIO_DIR, ANNOTATION_PATH
+            query, NUM_SPECIES, AUDIO_DIR, ANNOTATION_PATH, ASSETS_DIR
         )
 
         esc50.download_esc50_audio(
@@ -90,9 +88,16 @@ def download_audio():
 
 
 if __name__ == "__main__":
+
+
+    seed = 0
+
+    #MODEL_NAME = f"birdnet_extended_{seed}"
+    MODEL_NAME = f"birdnet_default_{seed}"
     
-    np.random.seed(0)
-    tf.random.set_seed(0)
+    # Note - not deterministic
+    # np.random.seed(seed)
+    # tf.random.set_seed(seed)
     
     species_map = download_audio()
 
@@ -102,6 +107,7 @@ if __name__ == "__main__":
 
     mfcc_example = audio_processing.load_data([0], DATA_DIR / H5FILE)
     mfcc_shape = mfcc_example.squeeze().shape
+
     train_dataset, test_dataset, train_size, test_size = tensorflow.get_dataset(DATA_DIR, ANNOTATION_PATH, H5FILE, mfcc_shape)   
 
     birdnet_model = birdnet.birdnet_model(MODEL_NAME, mfcc_shape, NUM_SPECIES + 1)
@@ -110,20 +116,6 @@ if __name__ == "__main__":
     _, history = tensorflow.train_model(MODEL_DIR, MODEL_NAME, birdnet_model, train_dataset, test_dataset)
     
     visualization.plot_history(ASSETS_DIR, MODEL_NAME, history)
-    visualization.plot_confusion_matrices(
-        ASSETS_DIR,
-        MODEL_NAME,
-        birdnet_model,
-        train_dataset,
-        test_dataset,
-        class_names=[
-            "WR",
-            "CW",
-            "CB",
-            "Other"
-        ]
-    )
-
 
     sys.path.append(os.path.join(PATH, "src", "quantization", "linux"))
     from calibrator import *
@@ -146,6 +138,23 @@ if __name__ == "__main__":
             calibrator=calibrator,
             calibration_dataset=test_dataset,
         )
+
+        visualization.plot_quantized_confusion_matrices(
+            ASSETS_DIR,
+            MODEL_DIR,
+            MODEL_NAME,
+            quantization_bit,
+            evaluator,
+            train_dataset,
+            test_dataset,
+            train_size,
+            test_size,
+            class_names=[
+            "WR",
+            "CW",
+            "CB",
+            "Other"
+        ])
 
         acc_train, acc_train_quant = quantization.evaluate_model(MODEL_DIR, MODEL_NAME, quantization_bit, train_dataset, train_size, evaluator)
         acc_test, acc_test_quant = quantization.evaluate_model(MODEL_DIR, MODEL_NAME, quantization_bit, test_dataset, test_size, evaluator)

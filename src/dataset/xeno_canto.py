@@ -40,7 +40,7 @@ class Counter:
         return self._value
 
 
-def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir: pathlib.Path, annotation_path: pathlib.Path):
+def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir: pathlib.Path, annotation_path: pathlib.Path, assets_dir: pathlib.Path):
     """Use xeno-canto interface to async. download bird audio files and create annotation file
 
     :param query: xeno-canto query
@@ -54,11 +54,11 @@ def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir:
     
     # Query xeno-canto API
     page = get_composite_page(query)
-    # xeno_canto.plot_distribution(page, threshold=0)
+    # plot_distribution(assets_dir, "bird_species", page, threshold=0.8)
     
     # Filter top-k species
     page = filter_top_k_species(page, k=num_species)
-    #xeno_canto.plot_distribution(page, threshold=0)
+    plot_distribution(assets_dir, "bird_species_top", page , threshold=0)
     
     species_map = asyncio.run(
       get_page_audio(page, audio_dir, annotation_path)
@@ -94,7 +94,7 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
     params = {"query": query, "page": page}
     logger.info(f"Query: {params}")
 
-    response = httpx.get(API_URL, params=params).raise_for_status().json()
+    response = httpx.get(API_URL, timeout=10, params=params).raise_for_status().json()
 
     # Store 'recordings' as Pandas DataFrame with index: 'id'
     recordings_df = pd.json_normalize(response.pop("recordings"))
@@ -365,7 +365,7 @@ def get_field(page: Page, id: str, field: str, prefix=True):
     """
     url = page.recordings.loc[id][field]
     url = f"https:{url}" if prefix else url
-    return httpx.get(url).raise_for_status()
+    return httpx.get(url, timeout=30).raise_for_status()
 
 
 def plot_sono(page: Page, id: str, version: str = "small"):
@@ -392,11 +392,11 @@ def plot_osci(page: Page, id: str, version: str = "small"):
     utils.plot_image(Image.open(BytesIO(response.content)))
 
 
-def plot_distribution(page: Page, threshold: int = 5):
+def plot_distribution(assets_dir, file_name, page: Page, threshold: int = 2):
     """Plot the distribution of bird species
 
     :param page: page of recordings
-    :param threshold: minimum percentage of species to plot, defaults to 5
+    :param threshold: minimum percentage of species to plot, defaults to 2
     """
 
     df = page.recordings
@@ -416,6 +416,11 @@ def plot_distribution(page: Page, threshold: int = 5):
         startangle=140,
         colors=utils.COLORS,
         explode=[0.05] * len(top_species),
+        textprops={"fontsize": 18}
     )
-    plt.title("Distribution of Bird Species")
+    plt.title("Distribution of bird species", fontsize=20)
+    
+    plt.tight_layout()
+    plt.savefig(assets_dir / f"{file_name}.pdf")
+
     plt.show()
