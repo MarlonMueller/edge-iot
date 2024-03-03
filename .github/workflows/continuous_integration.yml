@@ -12,12 +12,6 @@ jobs:
       - name: checkout repo
         uses: actions/checkout@v2.3.4
 
-      - name: Test Mic
-        run: echo "Mic works"
-
-      - name: Test Bird Sounds
-        run: echo "Chirp Chirp"
-
       - name: esp-idf build
         uses: espressif/esp-idf-ci-action@v1
         with:
