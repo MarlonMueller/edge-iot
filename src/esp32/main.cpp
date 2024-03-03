@@ -210,10 +210,10 @@ extern "C" void record_and_infer_sound()
             class_name = "Water Rail";
             break;
         case 1:
-            class_name = "Common Sandpiper";
+            class_name = "Cetti's Warbler";
             break;
         case 2:
-            class_name = "Cetti's Warbler";
+            class_name = "Common Blackbird";
             break;
         case 3:
             class_name = "Other";
