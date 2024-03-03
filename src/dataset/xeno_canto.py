@@ -4,7 +4,6 @@ import os
 import csv
 import pathlib
 import asyncio
-import warnings
 from PIL import Image
 from io import BytesIO
 from dataclasses import dataclass
@@ -18,12 +17,14 @@ import matplotlib.pyplot as plt
 from src import utils
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
 API_URL = "https://xeno-canto.org/api/2/recordings"
+
 
 class Counter:
     """A thread-safe counter."""
@@ -40,35 +41,41 @@ class Counter:
         return self._value
 
 
-def download_xeno_canto_audio(query: Dict[str, str], num_species:int, audio_dir: pathlib.Path, annotation_path: pathlib.Path, assets_dir: pathlib.Path):
+def download_xeno_canto_audio(
+    query: Dict[str, str],
+    num_species: int,
+    audio_dir: pathlib.Path,
+    annotation_path: pathlib.Path,
+    assets_dir: pathlib.Path,
+) -> Dict[str, int]:
     """Use xeno-canto interface to async. download bird audio files and create annotation file
 
     :param query: xeno-canto query
     :param num_species: top-k species to download
     :param audio_dir: audio directory
     :param annotation_path: annotation file path
+    :param assets_dir: assets directory
     :return: map of species names to numeric values
     """
-    
+
     logger.info("Downloading Xeno-Canto audio files ...")
-    
+
     # Query xeno-canto API
     page = get_composite_page(query)
     # plot_distribution(assets_dir, "bird_species", page, threshold=0.8)
-    
+
     # Filter top-k species
     page = filter_top_k_species(page, k=num_species)
-    plot_distribution(assets_dir, "bird_species_top", page , threshold=0)
-    
-    species_map = asyncio.run(
-      get_page_audio(page, audio_dir, annotation_path)
-    )
-    
+    plot_distribution(assets_dir, "bird_species_top", page, threshold=0)
+
+    species_map = asyncio.run(get_page_audio(page, audio_dir, annotation_path))
+
     return species_map
+
 
 @dataclass
 class Page:
-    
+
     """Dataclass for a page of recordings from the Xeno-Canto API."""
 
     numRecordings: int
@@ -96,7 +103,7 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
 
     response = httpx.get(API_URL, timeout=10, params=params).raise_for_status().json()
 
-    # Store 'recordings' as Pandas DataFrame with index: 'id'
+    # Store "recordings" as Pandas DataFrame with index: "id"
     recordings_df = pd.json_normalize(response.pop("recordings"))
     assert len(recordings_df) > 0, "numRecordings on page is zero"
     recordings_df = recordings_df.set_index("id")
@@ -136,7 +143,7 @@ def get_composite_page(query: Dict[str, str]) -> Page:
         composite_page.numRecordings
     ), "totalRecordings do not add up"
     composite_page.numPages = 1
-    
+
     logger.info(f"Raw page: {composite_page}")
     return composite_page
 
@@ -165,11 +172,11 @@ async def _get_audio(url: str, path: str):
 
 async def _download_audio(
     id_: str,
-    page:Page,
+    page: Page,
     species_map: Dict[str, int],
     audio_dir: pathlib.Path,
-    annotation_path : pathlib.Path,
-    columns : List[str],
+    annotation_path: pathlib.Path,
+    columns: List[str],
     semaphore,
     progress_bar,
     num_errors,
@@ -186,7 +193,7 @@ async def _download_audio(
     :param semaphore: shared semaphore
     :param progress_bar: progress bar
     :param num_errors: shared counter
-    :param lock: shared lock 
+    :param lock: shared lock
     :raises ValueError: if file is not .mp3 or .wav
     """
 
@@ -232,7 +239,6 @@ async def _download_audio(
                                 "sampling_rate": page.recordings.loc[id_]["smp"],
                             }
                         )
-                
 
         except (httpx.HTTPError, ValueError) as e:
             logger.debug(f"Error downloading {id_}: {str(e)}")
@@ -324,7 +330,7 @@ async def get_page_audio(
     semaphore = asyncio.Semaphore(5)
 
     total_downloads = len(ids)
-    
+
     progress_bar = None
     # progress_bar = tqdm(total=total_downloads, unit="download", dynamic_ncols=True)
 
@@ -338,7 +344,7 @@ async def get_page_audio(
                 annotation_path,
                 columns,
                 semaphore,
-                None, # progress_bar,
+                None,  # progress_bar,
                 num_errors,
                 lock,
             )
@@ -346,7 +352,7 @@ async def get_page_audio(
         tasks.append(task)
 
     await asyncio.gather(*tasks)
-    
+
     if progress_bar is not None:
         progress_bar.close()
 
@@ -416,10 +422,10 @@ def plot_distribution(assets_dir, file_name, page: Page, threshold: int = 2):
         startangle=140,
         colors=utils.COLORS,
         explode=[0.05] * len(top_species),
-        textprops={"fontsize": 18}
+        textprops={"fontsize": 18},
     )
     plt.title("Distribution of bird species", fontsize=20)
-    
+
     plt.tight_layout()
     plt.savefig(assets_dir / f"{file_name}.pdf")
 

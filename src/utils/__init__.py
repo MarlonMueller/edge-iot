@@ -11,4 +11,8 @@ COLORS = [
     "#b9a2c5",
 ]
 
-from .visualization import plot_history, plot_confusion_matrices, plot_quantized_confusion_matrices
+from .visualization import (
+    plot_history,
+    plot_confusion_matrices,
+    plot_quantized_confusion_matrices,
+)

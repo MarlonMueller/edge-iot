@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def birdnet_model(model_name:str, input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Create a BirdNET model.
 
-    :param model_name
+    :param model_name: name of the model
     :param input_shape: height and width of the input
     :param num_classes: number of classes
     :return: birdnet model
@@ -23,6 +23,9 @@ def birdnet_model(model_name:str, input_shape: Tuple[int, int], num_classes: int
     
 def get_birdnet_default(input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Get the default BirdNET model.
+    
+    :param input_shape: height and width of the input
+    :param num_classes: number of classes
 
     INFO:src.model.birdnet:Size of input: (308, 32)
     
@@ -127,6 +130,9 @@ def get_birdnet_default(input_shape: Tuple[int, int], num_classes: int) -> model
 
 def get_birdnet_extended(input_shape: Tuple[int, int], num_classes: int) -> models.Sequential:
     """Get the extended BirdNET model.
+    
+    :param input_shape: height and width of the input
+    :param num_classes: number of classes
 
     INFO:src.model.birdnet:Size of input: (308, 32)
     Model: "sequential"

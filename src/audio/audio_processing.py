@@ -16,7 +16,6 @@ import pathlib
 import numpy as np
 import pandas as pd
 from typing import List
-import matplotlib.pyplot as plt
 
 import logging
 
@@ -26,33 +25,41 @@ logger = logging.getLogger(__name__)
 # Path to C library
 # CDLL = "build/lib.macosx-10.9-x86_64-cpython-38/preprocess.cpython-38-darwin.so"
 CDLL = "build/lib.linux-x86_64-cpython-38/preprocess.cpython-38-x86_64-linux-gnu.so"
-# CDLL = "build/lib.linux-x86_64-3.10/preprocess.cpython-310-x86_64-linux-gnu.so"
 
 
 def mfcc(audio_data: np.array):
     """Compute MFCC features via C interface.
 
     :param audio_data: raw audio data
-    :return: Mel-frequency cepstral coefficients
+    :return: MFCC features
     """
 
     lib = ctypes.CDLL(CDLL)
 
-    lib.mfcc.argtypes = [ctypes.POINTER(ctypes.c_int16),
-                         ctypes.c_size_t,
-                         ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))),
-                         ctypes.POINTER(ctypes.c_size_t)]
-    
+    lib.mfcc.argtypes = [
+        ctypes.POINTER(ctypes.c_int16),
+        ctypes.c_size_t,
+        ctypes.POINTER(ctypes.POINTER(ctypes.POINTER(ctypes.c_float))),
+        ctypes.POINTER(ctypes.c_size_t),
+    ]
+
     lib.mfcc.restype = ctypes.c_int
 
-    audio_data = np.array(audio_data, dtype = np.int16)
-    audio_values_ptr = ctypes.cast(audio_data.ctypes.data, ctypes.POINTER(ctypes.c_int16))
+    audio_data = np.array(audio_data, dtype=np.int16)
+    audio_values_ptr = ctypes.cast(
+        audio_data.ctypes.data, ctypes.POINTER(ctypes.c_int16)
+    )
 
     output_frames = ctypes.c_size_t()
     output = ctypes.POINTER(ctypes.POINTER(ctypes.c_float))()
 
     lib.malloc_mfcc_module()
-    lib.mfcc(audio_values_ptr, len(audio_data), ctypes.byref(output), ctypes.byref(output_frames))
+    lib.mfcc(
+        audio_values_ptr,
+        len(audio_data),
+        ctypes.byref(output),
+        ctypes.byref(output_frames),
+    )
     lib.free_mfcc_module()
 
     num_mfcc = int(lib.get_num_mfcc())
@@ -66,7 +73,7 @@ def mfcc(audio_data: np.array):
     return mfcc
 
 
-def _load_audio(audio_path: pathlib.Path, sampling_rate, duration):
+def _load_audio(audio_path: pathlib.Path, sampling_rate: int, duration: int):
     """Load audio file, normalize and convert to int16.
 
     :param audio_path: audio file path
@@ -74,17 +81,11 @@ def _load_audio(audio_path: pathlib.Path, sampling_rate, duration):
     :param duration: duration in seconds
     :return: audio data
     """
-    y, sr = librosa.load(
-        audio_path, sr=sampling_rate, duration=duration, mono=True
-    )
+    y, sr = librosa.load(audio_path, sr=sampling_rate, duration=duration, mono=True)
     y = librosa.util.fix_length(y, size=int(sampling_rate * duration))
-    
-    # [-1, +1]
     y = y / np.max(np.abs(y))
-    
-    # float -> int16
     y = np.round(y * 32767).astype(np.int16)
-    
+
     return y
 
 
@@ -92,9 +93,9 @@ def load_audio(
     idxs: List[int],
     audio_dir: pathlib.Path,
     annotation_path: pathlib.Path,
-    sampling_rate,
-    duration,
-):
+    sampling_rate: int,
+    duration: int,
+) -> np.array:
     """Load audio files.
 
     :param idxs: idxs of files in annotation file
@@ -118,26 +119,27 @@ def load_audio(
     return y_all
 
 
-def load_mfcc(
+def get_features(
     idxs: List[int],
     audio_dir: pathlib.Path,
     annotation_path: pathlib.Path,
-    sampling_rate,
-    duration,
-):
-    """Load mfcc features.
+    sampling_rate: int,
+    duration: int,
+) -> np.array:
+    """Get normalized MFCC features.
 
     :param idxs: idxs of files in annotation file
     :param audio_dir: audio directory
     :param annotation_path: annotation file path
     :param sampling_rate: sampling_rate
     :param duration: duration in seconds
+    :return: MFCC features
     """
     y_in = load_audio(idxs, audio_dir, annotation_path, sampling_rate, duration)
     y_out = []
     for y in y_in:
         out = mfcc(y)
-        # -> [0, 1]
+        # Normalize MFCC features to [0, 1]
         out = (out - np.min(out)) / (np.max(out) - np.min(out))
         y_out.append(out)
     y_out = np.array(y_out)
@@ -165,10 +167,10 @@ def preprocess_audio(
     data_dir: pathlib.Path,
     audio_dir: pathlib.Path,
     annotation_path: pathlib.Path,
-    sampling_rate,
-    duration,
-    h5file,
-):
+    sampling_rate: int,
+    duration: int,
+    h5file: str,
+) -> None:
     """Preprocess audio files.
 
     :param data_dir: data directory
@@ -184,7 +186,7 @@ def preprocess_audio(
         df = pd.read_csv(annotation_path)
 
         with h5py.File(h5path, "w") as f:
-            shape_mfcc = load_mfcc(
+            shape_mfcc = get_features(
                 [0], audio_dir, annotation_path, sampling_rate, duration
             ).shape
             f.create_dataset("data", shape=(len(df), *shape_mfcc))
@@ -192,26 +194,26 @@ def preprocess_audio(
 
             for _, row in df.iterrows():
                 idx = row["idx"]
-                mfcc = load_mfcc(
+                mfcc = get_features(
                     [idx], audio_dir, annotation_path, sampling_rate, duration
-                ) 
-                
+                )
+
                 f["data"][idx, :, :, :] = mfcc
 
     else:
         logger.info("HDF5 file already exists. Skipping preprocessing.")
 
 
-def load_data(idxs: List[int], h5_path: pathlib.Path):
-    """Load processed audio data.
+def load_features(idxs: List[int], h5_path: pathlib.Path) -> np.array:
+    """Load processed mfcc features.
 
     :param idx: idxs of files in annotation file
-    :param data_dir: data directory
-    :param h5file: HDF5 file name
+    :param h5_path: HDF5 file path
+    :return: MFCC features
     """
 
     with h5py.File(h5_path, "r") as f:
         data = f["data"][idxs, :, :, :]
         data = np.array(data, dtype=np.float32)
-        
+
     return data
