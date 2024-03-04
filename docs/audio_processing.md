@@ -4,10 +4,6 @@ As a central element of the system, the different ESP32 nodes need to be able to
 record information through their microphone and preprocess this information
 for the internal ML model. 
 
-## Audio Recording
-
-TBD
-
 ## MFCC
 
 Once the audio is recorded, it needs to be processed before feeding it to a 

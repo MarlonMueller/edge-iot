@@ -1,20 +1,19 @@
 # Wiring
 
-The different components of the distributed systems must be wired together 
-in order to cooperate and act as an interconnected network. By default, we have 
-established a default wiring, which you are free to change according to your 
-interests. Instructions about that may be found at the end of this section.
+The different components of distributed systems need to be wired together to 
+work together and act as an interconnected network. By default, we have standard
+wiring, which you are free to modify according to your interests.
 
-In this section, for the different components attached to each node we will
-use the actual name shown on the boards. For RPI and ESP, the assigned names
-by the manufacturer will be used. You may see a map for their distribution
+In this section we use the names as they appear on the boards for the various 
+components connected to each node. For RPI and ESP, the names given by the 
+manufacturer are used. You can see a map of their distribution
 [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1-v1.0.html#header-block) 
 (for ESP) and [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html) 
-(for RPI). 
+(for RPI).
 
 ## Default wiring
 
-From the part of RPI, the following table maps each connection to the
+For the RPI, the following table maps each connection to the
 corresponding pin of the LoRa module SX1278. 
 
 | SX1278 Pin | RPI Pin |
@@ -28,12 +27,21 @@ corresponding pin of the LoRa module SX1278.
 | SCK        | GPIO11  |
 | NSS        | GPIO8   |
 
-On the other hand, for ESP we need to wire several components: (i) microphone, 
-(ii) LoRa module and (iii) GPS module. 
+On the other hand, for the ESP several components are required: (i) 
+the microphone, (ii) the LoRa module and (iii) the GPS module. 
 
-TODO MICROPHONE
+For the VM3011 microphone, set the following pins.
 
-For LoRa module, the corresponding wiring is displayed in the following table.
+| VM3011 Pin | ESP Pin |
+|------------|---------|
+| VCC        | 3V3     |
+| GND        | GND     |
+| WS         | GPIO42  |
+| SCK        | GPIO40  |
+| SD         | GPIO1   |
+| L/R        | GND     |
+
+For LoRa module, set the following pins.
 
 | SX1278 Pin | ESP Pin |
 |------------|---------|
@@ -48,7 +56,7 @@ For LoRa module, the corresponding wiring is displayed in the following table.
 Notice that that the DIO0 pin is not required in this case, unlike in the case
 of RPI. 
 
-On the other hand, for GPS module, the following pins were required.
+For GPS module, the following pins are required.
 
 | GPS Pin | ESP Pin |
 |---------|---------|
@@ -64,11 +72,6 @@ On the other hand, for GPS module, the following pins were required.
 > careful with boards pin layouts. There could be some pins that, at
 > initialization, are not properly configured and could fry the components.
 
-The change of the default wiring pins for the different components is possible.
-Please, make sure that, if you decide to change wiring, that all pins from
-the previous table are used. Otherwise, the result may be unexpected (even not
-working at all). 
-
 For RPI, the pins for RST and DIO0 may be changed by assigning the
 attributes `modem.eth.resetGpioN` and `modem.eth.dio0GpioN` at [this source file](../src/rpi/main.c). 
 
@@ -83,7 +86,7 @@ the following command in a terminal with `idf.py` available:
 idf.py menuconfig
 ```
 
-Then navigate to `LoRa Configuration`. An interface shall be displayed with 
+Then navigate to `LoRa Configuration`. An interface is displayed with 
 the corresponding associations between ESP pins and SX1278 pins, as shown
 in the following picture.
 
