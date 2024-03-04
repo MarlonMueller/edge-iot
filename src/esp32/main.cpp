@@ -76,6 +76,11 @@ extern "C" void record_and_infer_sound()
     // Set led to green
     set_esp_led_rgb(0, 255, 0);
 
+    #ifdef CONFIG_TIME_LOG
+    dl::tool::Latency latency;
+    latency.start();
+    #endif
+
     // Rescale to int16_t range
     int16_t max_sample = 0;
     for (size_t i = 0; i < AUDIO_BUFFER_SIZE; ++i)
@@ -103,7 +108,6 @@ extern "C" void record_and_infer_sound()
     log_heap();
     #endif
     
-    
     mfcc(audio_buffer, AUDIO_BUFFER_SIZE, &mfcc_output, &num_frames);
     free_mfcc_module();
     free(audio_buffer);
@@ -116,7 +120,6 @@ extern "C" void record_and_infer_sound()
     // Set led to blue
     set_esp_led_rgb(0, 0, 255);
 
-    // TODO: num_frames: size_t -> int
     int num_frames_int = static_cast<int>(num_frames);
 
     #ifdef QUANTIZATION_BITS_16
@@ -167,6 +170,11 @@ extern "C" void record_and_infer_sound()
     }
     free(mfcc_output);
 
+    #ifdef CONFIG_TIME_LOG
+    latency.end();
+    latency.print("MFCC");
+    #endif
+
     ESP_LOGI(TAG, "Postprocessed MFCCs...");
     #ifdef CONFIG_HEAP_LOG
     log_heap();
@@ -191,7 +199,16 @@ extern "C" void record_and_infer_sound()
     log_heap();
     #endif
 
+    #ifdef CONFIG_TIME_LOG
+    latency.start();
+    #endif
+
     model.forward(input);
+
+    #ifdef CONFIG_TIME_LOG
+    latency.end();
+    latency.print("BirdNET");
+    #endif
 
     ESP_LOGI(TAG, "Inferenced model...");
     #ifdef CONFIG_HEAP_LOG
@@ -223,7 +240,7 @@ extern "C" void record_and_infer_sound()
         ESP_LOGI(TAG, "%s: %f %%", class_name, probs[i] * 100);
     }
 
-    // set activation for LoRa
+    // Set LoRa activation
 
     int best_index = 0;
     float best_value = probs[best_index];

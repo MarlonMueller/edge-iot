@@ -4,7 +4,13 @@ menu "Custom"
         bool "Enable heap logging"
         default n
         help
-            Enable heap logging for debugging purposes.
+            Enable heap logging.
+
+    config TIME_LOG
+        bool "Enable time logging"
+        default y
+        help
+            Enable time logging.
 
     config QUANTIZATION_BITS_16
         bool "Use 16-bit quantization"
