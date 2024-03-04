@@ -8,6 +8,8 @@ __Table of Contents__
   - [Prerequisites](#prerequisites)
   - [Demo](#demo)
 - [Training Networks](#training-networks)
+  - [Configuration](#configuration)
+  - [Deployment](#deployment)
 - [Repository Structure](#repository-structure)
 - [Further documentation](#further-documentation)
 
@@ -106,7 +108,12 @@ sudo ./build/main_rpi
 
 To train your own networks, an end-to-end ML pipeline can be run.
 
-1. Setup the Python environment. Example
+> [!CAUTION]
+> The full pipeline can currently only be executed on a Linux-based operating system due to the internals of [ESP-DL](https://github.com/espressif/esp-dl). Please adhere to the suggested versions for Python, dependencies, and other components to reduce the chance of errors.
+
+## Configuration
+
+Setup the Python environment. Example
 
 ```bash
 # Create conda environment
@@ -116,8 +123,19 @@ conda activate birdnet
 python -m pip install -r requirements.txt
 ```
 
-> [!CAUTION]
-> The full pipeline can currently only be executed on a Linux-based operating system due to the internals of [ESP-DL](https://github.com/espressif/esp-dl). Please adhere to the suggested versions for Python, dependencies, and other components to reduce the chance of errors.
+We apply the same audio preprocessing to both training and inference. For
+this, we have implemented a C++ audio processing module, which can also be invoked from Python. For its setup run
+
+```bash
+python src/audio/setup.py build
+```
+and set the correct path to the C library in [`audio_processing.py`](https://github.com/MarlonMueller/edge-iot/blob/main/src/audio/audio_processing.py#L27). Then run
+
+```bash
+gcc -x c -o src/audio/preprocess.so -D RUN_PC -shared -fPIC -I include/ src/audio/preprocess.cpp -lm
+```
+
+For more details please refer to [`docs/audio_processing.md`](docs/audio_processing.md) and the source files.
 
 Within [`pipeline.py`](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) first, define a [Xeno Canto query](https://xeno-canto.org/explore/api). 
 By default, the network will be trained to detect the top-3 bird species resulting from this query. Data from [ESC50](https://github.com/karolpiczak/ESC-50) is used as a negative class.
@@ -125,6 +143,7 @@ By default, the network will be trained to detect the top-3 bird species resulti
 Within [`birdnet.py`](https://github.com/MarlonMueller/edge-iot/blob/main/src/model/birdnet.py) you can define your own CNN. Note that our [Jinja template](https://github.com/MarlonMueller/edge-iot/blob/main/src/templates/birdnet.jinja) currently only supports Conv2D, MaxPool2D, Flatten, FullyConnected and Softmax layers. Please refer to [this link](https://github.com/espressif/esp-dl/tree/master/include/layer) before including other layers to ensure that they are supported by ESP-DL. 
 Note that although the app partition size is [extended by default](https://github.com/MarlonMueller/edge-iot/blob/main/sdkconfig.defaults#L46), larger networks might necessitate further size adjustments.
 
+## Deployment
 
 On a high-level, the pipeline consists of the following steps
 
