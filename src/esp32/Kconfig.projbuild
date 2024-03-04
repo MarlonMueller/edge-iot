@@ -14,7 +14,7 @@ menu "Custom"
 
     config QUANTIZATION_BITS_16
         bool "Use 16-bit quantization"
-        default y
+        default n
         help
             Use 16-bit quantization instead of 8-bit.
    

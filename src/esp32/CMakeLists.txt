@@ -4,8 +4,8 @@ set(srcs
         main.cpp
         ../model/birdnet_default_int8_coefficient.cpp
         ../model/birdnet_default_int16_coefficient.cpp
-        ../model/birdnet_extended_int8_coefficient.cpp
-        ../model/birdnet_extended_int16_coefficient.cpp
+        #../model/birdnet_extended_int8_coefficient.cpp
+        #../model/birdnet_extended_int16_coefficient.cpp
 )
 
 set(src_dirs        
