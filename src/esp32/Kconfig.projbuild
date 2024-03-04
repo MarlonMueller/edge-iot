@@ -8,7 +8,7 @@ menu "Custom"
 
     config TIME_LOG
         bool "Enable time logging"
-        default y
+        default n
         help
             Enable time logging.
 
@@ -17,11 +17,5 @@ menu "Custom"
         default n
         help
             Use 16-bit quantization instead of 8-bit.
-
-    # config BIRDNET_MODEL
-    #     string "BirdNET model"
-    #     default "birdnet_default"
-    #     help
-    #         Select the BirdNET model to use.
    
 endmenu

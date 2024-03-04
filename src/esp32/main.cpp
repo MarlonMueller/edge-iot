@@ -47,8 +47,8 @@ static int input_exponent = -7;
 
 static gpio_num_t wakeup_pin = GPIO_NUM_4;
 
-static int wakeup_lora_us = 20 * 1000000L;
 static RTC_DATA_ATTR struct timeval last_lora_wakeup;
+static RTC_DATA_ATTR int wakeup_lora_us = 15 * 60 * 1000000L;
 
 extern "C" void record_and_infer_sound()
 {
@@ -329,11 +329,17 @@ extern "C" void app_main(void)
             
             send_data(&timer);
             ESP_LOGI(TAG, "Next wakeup in %d minutes", timer);
-            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(timer * 60 * 1000000L);
 
-            struct timeval tv_now;
-            gettimeofday(&tv_now, NULL);
-            last_lora_wakeup = tv_now;
+            if (timer == 0) {
+                ESP_LOGW(TAG, "No timer received, setting to 15 minutes");
+                timer = 15;
+            }
+
+            int64_t time_us = timer * 60 * 1000000L;
+
+            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(time_us));
+            gettimeofday(&last_lora_wakeup, NULL);
+
             
             break;
         }
@@ -346,11 +352,12 @@ extern "C" void app_main(void)
                 initialize_comm();
             }
             
-            gettimeofday(&last_lora_wakeup, NULL);
             ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us)); 
+            gettimeofday(&last_lora_wakeup, NULL);
     }
 
     // ESP_LOGI(TAG, "Entering deep sleep in 10 seconds...");
     // vTaskDelay(10000 / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Entering deep sleep...");
     esp_deep_sleep_start();
 }
