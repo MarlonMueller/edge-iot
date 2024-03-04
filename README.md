@@ -1,54 +1,42 @@
 ![Header](assets/header.png)
 
 
-This repository contains an implementation of the system BirdNet, a novel IoT
-system for bird monitoring in the wild using Machine Learning. This system 
-exploits the proximity of detection nodes to bird sound sources to map the 
-detected bird species to  physical locations. As only classification data is 
-sent (not audio data), this system offers the additional advantage of data 
-privacy. 
-
-__Table of Contents__
+# Table of Contents
 
 - [Hardware](#hardware)
 - [Getting Started](#getting-started)
 
 # Hardware
 
-The equipment list used for the implementation of this project are 
-listed as follows:
+The following equipment is required:
 
-- **ESP32-S3-DevKitC-1 (ESP)**. It will serve as edge nodes to capture data. 
-More than one ESP32 may be used (in fact, that is what should happen). For each
+- **ESP32-S3-DevKitC-1 (ESP)**. Serve as IoT node to capture data. 
+More than one ESP32 can be used (in fact, that is the expected setup). For each
 ESP32 device, there must be:
     - A LoRa module model **SX1278**. 
-    - A microphone module model **TODO**.
-    - A GPS module model **TODO**.
+    - A microphone module model **INMP441**.
+    - A GPS module model **GY-NEO6MV2**.
 
-- **Raspberry Pi 3 Model B+ (RPI)**. It will be used as the central node of the
-architecture. the different ESP32 will periodically send classification 
-information to this module. For this central node, there must be:
+- **Raspberry Pi 3 Model B+ (RPI)**. Used as a gateway node. The ESP32s periodically sends classification 
+information to it. For the RPI, there must be:
     - A LoRa module model **SX1278**. 
-    - A microSD to store the OS. We have used a MicroSD of 32 GB. 
+    - A sufficiently sized microSD (e.g., 32 GB)
 
-- **Development device (DEV)**. It will be used to develop, build and flash code 
-for this repository. Preferrably, it should use a Linux-based OS, such as 
-Ubuntu. 
+- **Development device (DEV)**. Used to develop, build and flash code. For complete functionality, choose a Linux-based OS, such as 
+Ubuntu.
+
+For ESP and RPI, make sure to have wired the different components. Please 
+refer to [docs/wiring.md](docs/wiring.md). If you have made changes to code 
+regarding the wiring of some component, wire the physical cables accordingly. 
 
 # Getting Started
 
 Before running the code contained in this repository, the following 
-__prerrequisites__ need to be fulfilled. The notation used at the beginning of
-each bullet point is shown in [Hardware](#hardware).
+__prerequisites__ need to be fulfilled. Note that the abbreviations ESP, RPI and DEV correspond to the ones within [Hardware](#hardware). 
 
-- Make sure to have the [Hardware](#hardware) required for this project.
+- For ESP and RPI, ensure that you have the necessary hardware for this project and that it is properly set up.
 
-- For ESP and RPI, make sure to have wired the different components. Please 
-refer to [docs/wiring.md](docs/wiring.md). If you have made changes to code 
-regarding the wiring of some component, wire the physical cables accordingly. 
-
-- For DEV, install the framework 
-[ESP-IDF](https://github.com/espressif/esp-idf). The code contained in this 
+- For DEV, install [ESP-IDF](https://github.com/espressif/esp-idf). The code contained in this 
 repository was succesfully built and developed using the version `v5.1.2`. Make 
 sure to be able to use `idf.py`. To do so, open a terminal and run the 
 following code (if you can see your version of ESP-IDF, then you can use it):
@@ -63,15 +51,14 @@ may be useful for starters. Read it carefully and remember that the connection
 names in your DEV may be different from those listed in the tutorial. 
 
 - For RPI, install the [Raspberry Pi OS](https://www.raspberrypi.com/software/)
-and flash it into the microSD card. Make sure you may use `sudo` command, as
-it is required for the first package in the following bullet point. 
+and flash it into the microSD card. Make sure you have `sudo` privileges. 
 
 - For RPI, make sure that SPI is configured appropiately. Further information
 may be found [here](https://www.raspberrypi-spy.co.uk/2014/08/enabling-the-spi-interface-on-the-raspberry-pi/).
 
 - For RPI, install the library 
 [pigpio](https://abyz.me.uk/rpi/pigpio/), as it will be required to interact 
-with LoRa module, and make sure to have installed the library 
+with the LoRa module, and make sure to have installed the library 
 [curl for C++](https://raspberry-projects.com/pi/programming-in-c/networking/curl/adding-curl-to-your-project),
 as it will be required to connect with backend and dashboard. 
 
@@ -89,18 +76,14 @@ git clone https://github.com/MarlonMueller/edge-iot.git
 2. In DEV device, move to the cloned repo directory. Flash the ESP code into
 each of your edge nodes by executing the command below. To test whether the
 code was correctly flashed into the devices, see the output opbtained in
-the terminal. If it has failed, a message error should appear. Otherwise, you
-can already visualize the first lines of code. 
+the terminal. If it has failed, a message error should appear.
 
 ```sh
 idf.py build flash monitor
 ```
 
 3. For the RPI, move to the cloned repo directory. A `Makefile` is specifically
-designed to automate the compilation of the file for Raspberry Pi. Then,
-you just need to execute the generated binary file in `sudo` mode. (Do not
-worry, we won't hack your RPI :laughing:). If you forgot to use `sudo` mode, 
-after executing the binary file a warning message should appear. 
+designed to automate the compilation of the file for Raspberry Pi.
 
 ```sh
 make -f Makefile.RPi
