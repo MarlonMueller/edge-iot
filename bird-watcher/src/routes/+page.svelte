@@ -5,27 +5,31 @@
 	import axios from 'axios';
 	import WaterRail from '$lib/WaterRail.png';
 	import CettisWarbler from '$lib/CettisWarbler.jpg';
-	import CommonSandpiper from '$lib/CommonSandpiper.jpg';
+	import CommonBlackbird from '$lib/CommonBlackbird.jpg';
 	import { MapLibre, DefaultMarker, Popup } from 'svelte-maplibre';
 
+	//birds array to be fetched from backend
 	$: birds = [];
+	//Initial map center
 	$: mapCenter = [11.6654128, 48.262547];
-	$: mapZoom = 13;
 
 	let map;
-	function scrollToTop() {
-		map.scrollIntoView();
-	}
 	let fetchDataFromBackend;
-	// let backendLink = 'http://172.20.10.2:8080';
-	let backendLink = 'http://localhost:8080';
+
+	// Backend links
+	// Raspberry pi backend
+	let backendLink = 'http://172.20.10.2:8080';
+	//Localhost backend
+	// let backendLink = 'http://localhost:8080';
 	onMount(async () => {
+		// Function for fetching classified birds from backend
 		const fetchData = async () => {
 			try {
 				if (fetchDataFromBackend) {
 					const response = await axios.post(`${backendLink}/birds/get`, {});
 					if (response?.data?.statusCode === '000') {
 						const data = response.data.data;
+						//If no previous birds fetched set birds = received data
 						if (birds.length == 0) {
 							birds = data;
 						} else {
@@ -34,7 +38,6 @@
 								(newBird) => !birds.some((existingBird) => existingBird._id === newBird._id)
 							);
 							birds = [...birds, ...newBirds];
-							// birds = birds
 						}
 					} else {
 						console.error('Failed to fetch data:', response.statusText);
@@ -67,11 +70,12 @@
 		<div class="flex">
 			<MapLibre
 				center={mapCenter}
-				zoom={mapZoom}
+				zoom={13}
 				class="map"
 				standardControls
 				style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
 			>
+				<!-- Display a marker on the map for each classified bird showing its information and image -->
 				{#each birds as bird}
 					{#if bird.name != 'No detection' && bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
 						<DefaultMarker lngLat={[bird.long, bird.lat]}>
@@ -82,8 +86,8 @@
 										<img src={WaterRail} alt="bird" style="width: 200px;" />
 									{:else if bird.name === "Cetti's Warbler"}
 										<img src={CettisWarbler} alt="bird" style="width: 200px;" />
-									{:else if bird.name === 'Common Sandpiper'}
-										<img src={CommonSandpiper} alt="bird" style="width: 200px;" />
+									{:else if bird.name === 'Common Blackbird'}
+										<img src={CommonBlackbird} alt="bird" style="width: 200px;" />
 									{/if}
 								</div>
 							</Popup></DefaultMarker
@@ -92,6 +96,7 @@
 				{/each}
 			</MapLibre>
 			<div class="flex flex-col-reverse w-100 ml-auto">
+				<!-- Display a card for each classified bird showing its information and image -->
 				{#each birds as bird}
 					<div
 						class="mt-6 card p-4 flex items-center flex-col w-80"
@@ -102,8 +107,8 @@
 							<img src={WaterRail} alt="bird" style="width: 300px;" />
 						{:else if bird.name === "Cetti's Warbler"}
 							<img src={CettisWarbler} alt="bird" style="width: 300px;" />
-						{:else if bird.name === 'Common Sandpiper'}
-							<img src={CommonSandpiper} alt="bird" style="width: 300px;" />
+						{:else if bird.name === 'Common Blackbird'}
+							<img src={CommonBlackbird} alt="bird" style="width: 300px;" />
 						{/if}
 
 						{#if bird.long && (bird.long <= 90) & (bird.long >= -90) && bird.lat && (bird.lat <= 90) & (bird.lat >= -90)}
@@ -114,7 +119,7 @@
 									type="button"
 									class="btn variant-filled mt-2"
 									on:click={() => {
-										// mapZoom = 13;
+										// Go to current bird on the map
 										mapCenter = [bird.long, bird.lat];
 										birds.map((x) => {
 											if (bird._id != x.id) bird.open = false;
@@ -123,7 +128,7 @@
 									}}>Find on map</button
 								>
 							{:else}
-								<h5 class="mt-0 text-center">at:</h5>
+								<h5 class="mt-0 text-center">at: Node {bird.esp}</h5>
 								<h5 class="text-center">{bird.long},{bird.lat}</h5>
 							{/if}
 						{/if}
