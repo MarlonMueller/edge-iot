@@ -1,8 +1,12 @@
 # Wiring
 
-The different components of distributed systems need to be wired together to work together and act as an interconnected network. By default, we have standard wiring, which you are free to modify according to your interests.
+The different components of distributed systems need to be wired together to 
+work together and act as an interconnected network. By default, we have standard
+wiring, which you are free to modify according to your interests.
 
-In this section we use the names as they appear on the boards for the various components connected to each node. For RPI and ESP, the names given by the manufacturer are used. You can see a map of their distribution
+In this section we use the names as they appear on the boards for the various 
+components connected to each node. For RPI and ESP, the names given by the 
+manufacturer are used. You can see a map of their distribution
 [here](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/hw-reference/esp32s3/user-guide-devkitc-1-v1.0.html#header-block) 
 (for ESP) and [here](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html) 
 (for RPI).
@@ -23,8 +27,8 @@ corresponding pin of the LoRa module SX1278.
 | SCK        | GPIO11  |
 | NSS        | GPIO8   |
 
-On the other hand, for the ESP several components are required: (i) the microphone, 
-(ii) the LoRa module and (iii) the GPS module. 
+On the other hand, for the ESP several components are required: (i) 
+the microphone, (ii) the LoRa module and (iii) the GPS module. 
 
 For the VM3011 microphone, set the following pins.
 
@@ -82,7 +86,7 @@ the following command in a terminal with `idf.py` available:
 idf.py menuconfig
 ```
 
-Then navigate, e.g., to `LoRa Configuration`. An interface is displayed with 
+Then navigate to `LoRa Configuration`. An interface is displayed with 
 the corresponding associations between ESP pins and SX1278 pins, as shown
 in the following picture.
 
