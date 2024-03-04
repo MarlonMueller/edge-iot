@@ -1,0 +1,20 @@
+Converting coefficient to int16 per-tensor quantization for esp32s3
+Exporting finish, the output files are: /home/muemarlo/Desktop/edge-iot/src/model/birdnet_extended_int16_coefficient.cpp, /home/muemarlo/Desktop/edge-iot/src/model/birdnet_extended_int16_coefficient.hpp
+
+Quantized model info:
+model input name: conv2d_input, exponent: -15
+Reshape layer name: StatefulPartitionedCall/sequential/conv2d/BiasAdd__6, output_exponent: -15
+Conv layer name: StatefulPartitionedCall/sequential/conv2d/BiasAdd, output_exponent: -15
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d/MaxPool, output_exponent: -15
+Conv layer name: StatefulPartitionedCall/sequential/conv2d_1/BiasAdd, output_exponent: -14
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d_1/MaxPool, output_exponent: -14
+Conv layer name: StatefulPartitionedCall/sequential/conv2d_2/BiasAdd, output_exponent: -14
+MaxPool layer name: StatefulPartitionedCall/sequential/max_pooling2d_2/MaxPool, output_exponent: -14
+Transpose layer name: StatefulPartitionedCall/sequential/max_pooling2d_2/MaxPool__28, output_exponent: -14
+Reshape layer name: StatefulPartitionedCall/sequential/flatten/Reshape, output_exponent: -14
+Gemm layer name: fused_gemm_0, output_exponent: -12
+Gemm layer name: fused_gemm_1, output_exponent: -11
+Gemm layer name: fused_gemm_2, output_exponent: -11
+Softmax layer name: StatefulPartitionedCall/sequential/dense_2/Softmax, output_exponent: -14
+
+

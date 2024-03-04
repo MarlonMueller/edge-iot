@@ -19,7 +19,7 @@ using namespace birdnet_default_int16_coefficient;
 
 // input_exponent: ['-15']
 
-// evaluation: acc_train: 90.92009685230025, acc_train_quant: 90.92009685230025, acc_test: 89.61352657004831, acc_test_quant: 89.61352657004831
+// evaluation: acc_train: 85.9918200408998, acc_train_quant: 86.04294478527608, acc_test: 82.44897959183673, acc_test_quant: 82.44897959183673
 
 class BIRDNET_DEFAULT_INT16 : public Model<int16_t>
 {
@@ -55,7 +55,7 @@ public:
         max_pooling2d(MaxPool2D<int16_t>({3,1}, PADDING_VALID, {}, 3, 1, "max_pooling2d")),
         
         conv2d_1(Conv2D<int16_t>(
-            -14,
+            -13,
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_filter(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_bias(),
             get_statefulpartitionedcall_sequential_conv2d_1_biasadd_activation(),
@@ -81,7 +81,7 @@ public:
         flatten(Flatten<int16_t>("flatten", false)),
         
         dense(FullyConnected<int16_t>(
-            -12,
+            -11,
             get_fused_gemm_0_filter(),
             get_fused_gemm_0_bias(),
             get_fused_gemm_0_activation(),
