@@ -55,7 +55,7 @@ if __name__ == "__main__":
     }
 
     # Download audio files
-    if not os.listdir(AUDIO_DIR):
+    if not os.listdir(AUDIO_DIR) == [".gitkeep"]:
 
         if os.path.isfile(ANNOTATION_PATH):
             logger.info("Removing existing annotation file.")
