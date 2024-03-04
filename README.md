@@ -5,6 +5,8 @@
 
 - [Hardware](#hardware)
 - [Getting Started](#getting-started)
+- [Training Networks](#training-networks)
+- [Repository Structure](#repository-structure)
 
 # Hardware
 
@@ -31,8 +33,11 @@ regarding the wiring of some component, wire the physical cables accordingly.
 
 # Getting Started
 
-Before running the code contained in this repository, the following 
-__prerequisites__ need to be fulfilled. Note that the abbreviations ESP, RPI and DEV correspond to the ones within [Hardware](#hardware). 
+Before running code contained in this repository, the following prerequisites need to be fulfilled.
+
+## Prerequisites
+
+ Note that the abbreviations ESP, RPI and DEV correspond to the ones within [Hardware](#hardware). 
 
 - For ESP and RPI, ensure that you have the necessary hardware for this project and that it is properly set up.
 
@@ -64,8 +69,10 @@ as it will be required to connect with backend and dashboard.
 
 - For DEV and RPI, install the [git utility](https://git-scm.com/downloads). 
 
+## Demo
+
 Once you have checked that you fulfill all the prerrequisites, follow these
-steps to have a functional demo of BirdNet:
+steps to have a functional demo of BirdNet to detect Water Rails, Cetti's Warblers and Common Blackbirds 🐦.
 
 1. Clone this repository in both DEV and RPI:
 
@@ -91,3 +98,114 @@ sudo ./build/main_rpi
 ```
 
 4. TODO (WEB)
+
+# Training Networks
+
+To train your own networks, an end-to-end ML pipeline can be run.
+
+1. Setup the Python environment
+
+```bash
+conda create -n "birdnet" python=3.8.18 pip
+conda activate birdnet
+pip install -r requirements.txt
+```
+
+> [!CAUTION]
+> The full pipeline can currently only be executed on a Linux-based operating system due to the internals of [ESP-DL](https://github.com/espressif/esp-dl). Please adhere to the suggested versions for Python, dependencies, and other components to reduce the chance of errors.
+
+Within [pipeline.py](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) first, define a [Xeno Canto query](https://xeno-canto.org/explore/api). 
+By default, the network will be trained to detect the top-3 bird species resulting from this query. Data from [ESC50](https://github.com/karolpiczak/ESC-50) is used as a negative class.
+
+Within [birdnet.py] you can define your own CNN. Note that our Jinja template currently only supports Conv2D, MaxPool2D, Flatten, FullyConnected and Softmax layers. Please refer to [this link](https://github.com/espressif/esp-dl/tree/master/include/layer) before including other layers to ensure that they are supported by ESP-DL. 
+Note that although the app partition size is [extended by default](https://github.com/MarlonMueller/edge-iot/blob/main/sdkconfig.defaults#L46), larger networks might necessitate further size adjustments.
+
+
+On a high-level, the pipeline consists of the following steps
+
+1. Download audio files from Xeno Canto and ESC50 if not already present
+2. Convert audio signal to normalized mel-frequency cepstral coefficients
+3. Generate TensorFlow datasets from h5 file and annotation file
+4. Train model (and optionally visualize training history)
+5. Quantize model to int8 and int16 and evaluate performance
+6. Render model to C++ code using Jinja template
+
+and can be executed using
+
+```bash
+python pipeline.py
+```
+
+If successful, six model and weight C++ files will be placed in the [src/model](https://github.com/MarlonMueller/edge-iot/tree/main/src/model) directory: three for an **int8** quantized version of the trained model and three for an **int16** version.
+
+Please note that multiple intermediate models will be generated during this process, which are not relevant for the ESP32 code. To run the model on the ESP32, integrate the generated `.cpp coefficient` file in [src/esp32/CMakeLists.txt](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/CMakeLists.txt), for example
+
+```
+set(srcs
+    main.cpp
+    ../model/birdnet_int8_coefficient.cpp
+)
+```
+ and include the model it [main.cpp](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp), e.g.,
+
+ ```
+#include "birdnet_int8.hpp"
+```
+
+Furthermore, ensure that the correct input quantization exponent input_exponent is set in [main.cpp](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp). You can find the coefficient as a comment in the model .hpp file, for instance: input_exponent: ['-7'], or alternatively in the quantization log.
+
+Time and heap logging can be enabled inside the [Kconfig.projbuild](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/Kconfig.projbuild) file. Ensure that the project is fully cleaned before compiling to ensure that the changes take effect.
+
+Additionally, if modifications are made such as changing the number of species, it is necessary to adjust the ESP32 code accordingly.
+
+For more insights, please consult [pipeline.py](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) and the respective Python modules within [/src](https://github.com/MarlonMueller/edge-iot/tree/main/src).
+
+
+# Repository Structure
+
+Please note that this provides only a high-level overview. Additionally, some data is not contained on GitHub but will be generated during processing.
+
+```
+./
+├── .github/
+│   └── workflows/
+│       └── continuous_integration.yml
+├── assets/
+├── components/
+│   └── espressif__esp-dsp
+├── data/
+│   ├── audio/
+│   │   ├── ESC-50-master
+│   │   ├── annotation.csv
+│   │   └── audio_preprocessed.h5
+├── docs/
+│   ├── reports/
+│   ├── slides/
+│   └── [docs.md]*
+├── include/ <- C++/C header
+├── src/
+│   ├── audio/ <- Microphone, audio preprocessing
+│   ├── dataset/ <- Xeno Canto, ESC-50, TF datasets
+│   ├── esp-dl/ <- (Hotfixed) ESP-DL
+│   ├── esp-led/
+│   ├── esp32/ <- ESP32-S3 main.cpp
+│   ├── gps/
+│   ├── heap-log/
+│   ├── lora/
+│   ├── model/ <- Python, C++ models
+│   ├── quantization/
+│   ├── rpi/ <- RPI main.cpp
+│   ├── templates/ <- Jinja template
+│   ├── utils/ <- Plots
+│   ├── websocket/
+│   └── wifi/
+├── .gitignore
+├── .pre-commit-config.yaml
+├── CMakeLists.txt
+├── Makefile.RPi
+├── README.md
+├── pipeline.py
+├── requirements.txt
+├── requirements_idf.txt
+└── sdkconfig.defaults
+```
