@@ -33,4 +33,5 @@ void clear_esp_led()
 {
     ESP_LOGI("esp_led", "Clearing LED");
     led_strip_clear(led_strip);
+    ESP_ERROR_CHECK(led_strip_del(led_strip));
 }
