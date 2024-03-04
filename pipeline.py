@@ -53,9 +53,13 @@ if __name__ == "__main__":
         "grp": "1",
         "len": "4-6",
     }
+    
+    # Create audio directory if not present
+    if not os.path.exists(AUDIO_DIR):
+        os.makedirs(AUDIO_DIR)
 
-    # Download audio files
-    if not os.listdir(AUDIO_DIR) == [".gitkeep"]:
+    # Download audio files if not already present
+    if not os.listdir(AUDIO_DIR):
 
         if os.path.isfile(ANNOTATION_PATH):
             logger.info("Removing existing annotation file.")
