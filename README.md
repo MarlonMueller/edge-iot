@@ -1,12 +1,15 @@
 ![Header](assets/header.png)
 
 
-# Table of Contents
+__Table of Contents__
 
 - [Hardware](#hardware)
 - [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Demo](#demo)
 - [Training Networks](#training-networks)
 - [Repository Structure](#repository-structure)
+- [Further documentation](#further-documentation)
 
 # Hardware
 
@@ -209,3 +212,14 @@ Please note that this provides only a high-level overview. Additionally, some da
 ├── requirements_idf.txt
 └── sdkconfig.defaults
 ```
+
+# Further documentation
+
+Please see [`docs/`](docs/) for further interesting documentation. Of special
+relevance are:
+
+- [`docs/audio_processing.md`](docs/audio_processing.md). It provides further
+  information about how you could run the preprocessing in PC. 
+
+- [`docs/lora_interconnection.md`](docs/lora_interconnection.md). It provides
+  further information about the packages sent during in the system. 
