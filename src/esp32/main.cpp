@@ -358,5 +358,7 @@ extern "C" void app_main(void)
 
     // ESP_LOGI(TAG, "Entering deep sleep in 10 seconds...");
     // vTaskDelay(10000 / portTICK_PERIOD_MS);
+
+    ESP_LOGI(TAG, "Entering deep sleep...");
     esp_deep_sleep_start();
 }
