@@ -1,30 +1,39 @@
-# A boilerplate for Ahmed Kaddah Node.js microservices
+# Bird Watcher Node.js Backend
+
+## Installation
+
+To set up the project, follow these steps:
+
+1. Clone the repository
+2. Install the required npm packages:
+
+```bash
+npm install
+```
+
+3. Running the Project:
+
+```bash
+npm start
+```
 
 ## File hierarchy
 
 ```
-MICROSERVICE_NAME
+Backend
 ├─ .eslintrc
 ├─ .vscode
 │  └─ settings.json
-├─ authorization
-├─ config
-│  ├─ database.js
-│  └─ keys.js
 ├─ constants
-│  ├─ enums.js
 │  └─ errorCodes.js
 ├─ controllers
-├─ MICROSERVICE_NAME.js
+├─ app.js
 ├─ helpers
 │  ├─ generalHelper.js
 │  └─ requestHandler.js
 ├─ middleware
-│  ├─ authentication.js
-│  ├─ authorization.js
 │  ├─ autoRouter.js
 │  └─ bootstrap.js
-├─ models
 ├─ package-lock.json
 ├─ package.json
 └─ README.md
@@ -49,21 +58,15 @@ MICROSERVICE_NAME
 
 - Contains files related to authorization of the application.
 
-### `config`:
-
-- `database.js`: Contains the configuration settings for the database connection.
-- `keys.js`: Contains sensitive data such as API keys, secrets, and passwords.
-
 ### `constants`:
 
-- `enums.js`: Contains the constant values used in the application.
 - `errorCodes.js`: Contains error codes used throughout the application.
 
 ### `controllers`:
 
 - Contains files for defining and handling service endpoints.
 
-### `MICROSERVICE_NAME.js`:
+### `app.js`:
 
 - Main application file, where the server and application are defined.
 
@@ -76,13 +79,7 @@ MICROSERVICE_NAME
 ### `middleware`:
 
 - Contains middleware functions for the application.
-- `authentication.js`: Contains middleware functions for authenticating users.
-- `authorization.js`: Contains middleware functions for authorizing access to endpoints.
 - `autoRouter.js`: Contains middleware functions for automatically routing requests to the correct endpoint.
 - `bootstrap.js`: Contains middleware functions for bootstrapping the application.
-
-### `models`:
-
-- Contains files for defining and accessing database models and schemas.
 
 ---
