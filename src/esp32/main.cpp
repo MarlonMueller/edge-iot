@@ -25,11 +25,17 @@
 
 #include "dl_tool.hpp"
 
-#ifdef QUANTIZATION_BITS_16
-#include "birdnet_default_int16.hpp"
+#ifdef CONFIG_QUANTIZATION_BITS_16
+#include "birdnet_extended_int16.hpp"
 #else
-#include "birdnet_default_int8.hpp"
+#include "birdnet_extended_int8.hpp"
 #endif
+
+// #ifdef CONFIG_QUANTIZATION_BITS_16
+// #include "birdnet_default_int16.hpp"
+// #else
+// #include "birdnet_default_int8.hpp"
+// #endif
 
 #define TAG "MAIN"
 
@@ -109,6 +115,12 @@ extern "C" void record_and_infer_sound()
     #endif
     
     mfcc(audio_buffer, AUDIO_BUFFER_SIZE, &mfcc_output, &num_frames);
+
+    ESP_LOGI(TAG, "MFCC module...");
+    #ifdef CONFIG_HEAP_LOG
+    log_heap();
+    #endif
+
     free_mfcc_module();
     free(audio_buffer);
 
@@ -122,7 +134,7 @@ extern "C" void record_and_infer_sound()
 
     int num_frames_int = static_cast<int>(num_frames);
 
-    #ifdef QUANTIZATION_BITS_16
+    #ifdef CONFIG_QUANTIZATION_BITS_16
     int16_t *model_input = (int16_t *)malloc(num_frames_int * num_mfcc * sizeof(int16_t));
     #else
     int8_t *model_input = (int8_t *)malloc(num_frames_int * num_mfcc * sizeof(int8_t));
@@ -153,7 +165,7 @@ extern "C" void record_and_infer_sound()
             {
                 float normalized_input = (mfcc_output[i][j] - min_value) / (max_value - min_value);
 
-                #ifdef QUANTIZATION_BITS_16
+                #ifdef CONFIG_QUANTIZATION_BITS_16
                 model_input[pos] = (int16_t)DL_CLIP(normalized_input * (1 << -input_exponent), -32768, 32767);
                 #else
                 model_input[pos] = (int8_t)DL_CLIP(normalized_input * (1 << -input_exponent), -128, 127);
@@ -180,7 +192,7 @@ extern "C" void record_and_infer_sound()
     log_heap();
     #endif
 
-    #ifdef QUANTIZATION_BITS_16
+    #ifdef CONFIG_QUANTIZATION_BITS_16
     Tensor<int16_t> input;
     input.set_element((int16_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
     #else
@@ -188,10 +200,16 @@ extern "C" void record_and_infer_sound()
     input.set_element((int8_t *)model_input).set_exponent(input_exponent).set_shape({num_frames_int, num_mfcc, 1}).set_auto_free(true);
     #endif
 
-    #ifdef QUANTIZATION_BITS_16
-    BIRDNET_DEFAULT_INT16 model;
+    // #ifdef CONFIG_QUANTIZATION_BITS_16
+    // BIRDNET_DEFAULT_INT16 model;
+    // #else
+    // BIRDNET_DEFAULT_INT8 model;
+    // #endif
+
+    #ifdef CONFIG_QUANTIZATION_BITS_16
+    BIRDNET_EXTENDED_INT16 model;
     #else
-    BIRDNET_DEFAULT_INT8 model;
+    BIRDNET_EXTENDED_INT8 model;
     #endif
 
     ESP_LOGI(TAG, "Initialized model...");
@@ -219,7 +237,7 @@ extern "C" void record_and_infer_sound()
 
     for (size_t i = 0; i < 4; i++)
     {
-        char *class_name = NULL;
+        const char* class_name = "";
 
         switch (i)
         {
@@ -297,6 +315,7 @@ extern "C" void app_main(void)
                 ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(time_us)); 
                 break;
             }
+            // If time_us is negative, also send the data
         }
         case ESP_SLEEP_WAKEUP_TIMER: {
             ESP_LOGI(TAG, "ESP_SLEEP_WAKEUP_TIMER");
@@ -309,12 +328,11 @@ extern "C" void app_main(void)
             uint8_t timer = 0;
             
             send_data(&timer);
-            ESP_LOGI(TAG, "Timer value: %d", timer);
+            ESP_LOGI(TAG, "Next wakeup in %d minutes", timer);
+            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(timer * 60 * 1000000L);
 
             struct timeval tv_now;
             gettimeofday(&tv_now, NULL);
-            int64_t time_us = (int64_t)(tv_now.tv_sec - last_lora_wakeup.tv_sec) * 1000000L + (int64_t)(tv_now.tv_usec - last_lora_wakeup.tv_usec);
-            ESP_ERROR_CHECK(esp_sleep_enable_timer_wakeup(wakeup_lora_us + (wakeup_lora_us - time_us)));
             last_lora_wakeup = tv_now;
             
             break;
