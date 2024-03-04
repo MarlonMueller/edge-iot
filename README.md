@@ -106,21 +106,23 @@ sudo ./build/main_rpi
 
 To train your own networks, an end-to-end ML pipeline can be run.
 
-1. Setup the Python environment
+1. Setup the Python environment. Example
 
 ```bash
+# Create conda environment
 conda create -n "birdnet" python=3.8.18 pip
 conda activate birdnet
-pip install -r requirements.txt
+# Install requirements
+python -m pip install -r requirements.txt
 ```
 
 > [!CAUTION]
 > The full pipeline can currently only be executed on a Linux-based operating system due to the internals of [ESP-DL](https://github.com/espressif/esp-dl). Please adhere to the suggested versions for Python, dependencies, and other components to reduce the chance of errors.
 
-Within [pipeline.py](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) first, define a [Xeno Canto query](https://xeno-canto.org/explore/api). 
+Within [`pipeline.py`](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) first, define a [Xeno Canto query](https://xeno-canto.org/explore/api). 
 By default, the network will be trained to detect the top-3 bird species resulting from this query. Data from [ESC50](https://github.com/karolpiczak/ESC-50) is used as a negative class.
 
-Within [birdnet.py] you can define your own CNN. Note that our Jinja template currently only supports Conv2D, MaxPool2D, Flatten, FullyConnected and Softmax layers. Please refer to [this link](https://github.com/espressif/esp-dl/tree/master/include/layer) before including other layers to ensure that they are supported by ESP-DL. 
+Within [`birdnet.py`](https://github.com/MarlonMueller/edge-iot/blob/main/src/model/birdnet.py) you can define your own CNN. Note that our [Jinja template](https://github.com/MarlonMueller/edge-iot/blob/main/src/templates/birdnet.jinja) currently only supports Conv2D, MaxPool2D, Flatten, FullyConnected and Softmax layers. Please refer to [this link](https://github.com/espressif/esp-dl/tree/master/include/layer) before including other layers to ensure that they are supported by ESP-DL. 
 Note that although the app partition size is [extended by default](https://github.com/MarlonMueller/edge-iot/blob/main/sdkconfig.defaults#L46), larger networks might necessitate further size adjustments.
 
 
@@ -139,9 +141,9 @@ and can be executed using
 python pipeline.py
 ```
 
-If successful, six model and weight C++ files will be placed in the [src/model](https://github.com/MarlonMueller/edge-iot/tree/main/src/model) directory: three for an **int8** quantized version of the trained model and three for an **int16** version.
+If successful, six model and weight C++ files will be placed in the [`src/model`](https://github.com/MarlonMueller/edge-iot/tree/main/src/model) directory: three for an **int8** quantized version of the trained model and three for an **int16** version.
 
-Please note that multiple intermediate models will be generated during this process, which are not relevant for the ESP32 code. To run the model on the ESP32, integrate the generated `.cpp coefficient` file in [src/esp32/CMakeLists.txt](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/CMakeLists.txt), for example
+Please note that multiple intermediate models will be generated during this process, which are not relevant for the ESP32 code. To run the model on the ESP32, integrate the generated `.cpp coefficient` file in [`src/esp32/CMakeLists.txt`](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/CMakeLists.txt), for example
 
 ```
 set(srcs
@@ -149,19 +151,19 @@ set(srcs
     ../model/birdnet_int8_coefficient.cpp
 )
 ```
- and include the model it [main.cpp](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp), e.g.,
+ and include the model it [`main.cpp`](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp), e.g.,
 
  ```
 #include "birdnet_int8.hpp"
 ```
 
-Furthermore, ensure that the correct input quantization exponent input_exponent is set in [main.cpp](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp). You can find the coefficient as a comment in the model .hpp file, for instance: input_exponent: ['-7'], or alternatively in the quantization log.
+Furthermore, ensure that the correct input quantization exponent input_exponent is set in [`main.cpp`](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/main.cpp). You can find the coefficient as a comment in the model `.hpp` file, for instance: `input_exponent: ['-7']`, or alternatively in the quantization log.
 
-Time and heap logging can be enabled inside the [Kconfig.projbuild](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/Kconfig.projbuild) file. Ensure that the project is fully cleaned before compiling to ensure that the changes take effect.
+Time and heap logging can be enabled inside the [`Kconfig.projbuild`](https://github.com/MarlonMueller/edge-iot/blob/main/src/esp32/Kconfig.projbuild) file. Ensure that the project is fully cleaned before compiling to ensure that the changes take effect.
 
 Additionally, if modifications are made such as changing the number of species, it is necessary to adjust the ESP32 code accordingly.
 
-For more insights, please consult [pipeline.py](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) and the respective Python modules within [/src](https://github.com/MarlonMueller/edge-iot/tree/main/src).
+For more insights, please consult [`pipeline.py`](https://github.com/MarlonMueller/edge-iot/blob/main/pipeline.py) and the respective Python modules within [`/src`](https://github.com/MarlonMueller/edge-iot/tree/main/src).
 
 
 # Repository Structure
