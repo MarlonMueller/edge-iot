@@ -101,7 +101,7 @@ def get_page(query: Dict[str, str], page: int = 1) -> Page:
     params = {"query": query, "page": page}
     logger.info(f"Query: {params}")
 
-    response = httpx.get(API_URL, timeout=10, params=params).raise_for_status().json()
+    response = httpx.get(API_URL, timeout=60, params=params).raise_for_status().json()
 
     # Store "recordings" as Pandas DataFrame with index: "id"
     recordings_df = pd.json_normalize(response.pop("recordings"))
