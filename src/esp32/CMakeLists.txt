@@ -2,9 +2,10 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs
         main.cpp
-        ../model/birdnet_default_int8_coefficient.cpp
-        ../model/birdnet_default_int16_coefficient.cpp
-        #../model/birdnet_extended_int8_coefficient.cpp
+        #../model/birdnet_default_int8_coefficient.cpp
+        ../model/birdnet_extended_int8_coefficient.cpp
+        #../model/birdnet_default_int16_coefficient.cpp
+        # Note: model requires partition size adjustment
         #../model/birdnet_extended_int16_coefficient.cpp
 )
 

@@ -64,6 +64,9 @@ CONFIG_HEAP_TRACING_STANDALONE=n
 # Lowest RTC clock source
 CONFIG_RTC_CLK_SRC_INT_RC=y
 
+# Increase stack size
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=7168
+
 # Skip image validation when exiting deep sleep
 CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP=y
 
