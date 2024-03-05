@@ -86,7 +86,9 @@ static float *s_mel_buffer;
 // static float s_mel_filt[N_MELS][NUM_FFT / 2 + 1];
 // static float s_mel_buffer[2*N_MELS];
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 // Auxiliary functions
 
@@ -340,4 +342,6 @@ esp_err_t free_mfcc_module()
     return ESP_OK;
 }
 
+#ifdef __cplusplus
 }
+#endif

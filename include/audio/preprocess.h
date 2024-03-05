@@ -14,7 +14,9 @@
 #include "sim_dsp/aux_err.h"
 #endif
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 /**
  * @brief Get number of MFCC features.
@@ -60,4 +62,7 @@ esp_err_t mfcc(int16_t *wav_values, size_t num_samples,
 */
 esp_err_t free_mfcc_module();
 
+
+#ifdef __cplusplus
 }
+#endif
