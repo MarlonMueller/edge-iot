@@ -102,7 +102,9 @@ make -f Makefile.RPi
 sudo ./build/main_rpi
 ```
 
-4. TODO (WEB)
+4. For the backend please go to [https://github.com/MarlonMueller/edge-iot/tree/backend](https://github.com/MarlonMueller/edge-iot/tree/backend/backend)
+
+5. For the frontend please go to https://github.com/MarlonMueller/edge-iot/tree/frontend/bird-watcher
 
 # Training Networks
 
