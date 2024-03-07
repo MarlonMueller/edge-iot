@@ -118,13 +118,13 @@ void send_classification(uint8_t local_id, bool d1, bool d2, bool d3) {
         }
 
         if (d2) {
-            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Common Sandpiper\"\r\n}", local_id);
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Cetti's Warbler\"\r\n}", local_id);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             res = curl_easy_perform(curl);
         }
 
         if (d3) {
-            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Cetti's Warbler\"\r\n}", local_id);
+            sprintf(data, "{\r\n    \"nodeId\":\"%d\",\r\n    \"name\":\"Common Blackbird\"\r\n}", local_id);
             curl_easy_setopt(curl, CURLOPT_POSTFIELDS, data);
             res = curl_easy_perform(curl);
         }
