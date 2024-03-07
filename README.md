@@ -1,5 +1,10 @@
 ![Header](assets/header.png)
 
+In this repository, we have implemented **BirdNet**, a distributed system for 
+bird monitoring. By deploying nodes in the wild, the system captures bird sounds
+and classifies the detected sounds using Deep Learning. Each node periodically 
+reports identified bird species to a gateway. Detections from these
+nodes can then be visualized using a dashboard. 
 
 __Table of Contents__
 
